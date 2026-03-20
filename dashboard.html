@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harness Racing Scraper — Control Centre</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap');
+
+  :root {
+    --navy: #0D1F35;
+    --navy2: #1A3A5C;
+    --blue: #2A6FC0;
+    --sky: #4AABDB;
+    --gold: #E8B84B;
+    --green: #2ECC71;
+    --red: #E74C3C;
+    --light: #EAF2FB;
+    --text: #1A2E42;
+    --muted: #7A95B2;
+    --white: #FFFFFF;
+    --card-bg: #F5F9FF;
+    --border: #C8DCEF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+    border-bottom: 3px solid var(--gold);
+    padding: 0;
+  }
+
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 32px 24px;
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+  }
+
+  .logo-block {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-icon {
+    font-size: 52px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 8px rgba(232,184,75,0.4));
+  }
+
+  h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 38px;
+    line-height: 0.95;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+
+  h1 span {
+    color: var(--gold);
+    display: block;
+  }
+
+  .tagline {
+    color: var(--sky);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  nav {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+  }
+
+  nav button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--white);
+    padding: 8px 18px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  nav button:hover, nav button.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--navy);
+  }
+
+  /* ── Layout ── */
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 32px 80px;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── Cards ── */
+  .card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+
+  .card-white {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  .card h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gold);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-white h2 {
+    color: var(--navy2);
+  }
+
+  .card-white h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy2);
+    text-transform: uppercase;
+    margin: 18px 0 8px;
+  }
+
+  /* ── Grid ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+  /* ── Step badges ── */
+  .steps { counter-reset: step; }
+  .step {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 24px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    background: var(--gold);
+    color: var(--navy);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 20px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .step-body h3 {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .step-body p {
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Code blocks ── */
+  pre, .code-block {
+    background: #0A1628;
+    border: 1px solid rgba(74,171,219,0.3);
+    border-left: 3px solid var(--sky);
+    border-radius: 6px;
+    padding: 16px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #A8D8F0;
+    overflow-x: auto;
+    white-space: pre;
+    margin: 10px 0;
+  }
+
+  .cmd { color: var(--gold); }
+  .flag { color: var(--sky); }
+  .comment { color: var(--muted); opacity: 0.7; }
+  .ok { color: var(--green); }
+
+  /* ── Tab sheet preview ── */
+  .tab-list {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .tab-pill {
+    background: var(--navy2);
+    border: 1px solid var(--blue);
+    border-radius: 5px 5px 0 0;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sky);
+    letter-spacing: 0.3px;
+  }
+
+  .tab-pill.active-tab {
+    background: var(--white);
+    color: var(--navy);
+    border-color: var(--border);
+  }
+
+  /* ── Data table preview ── */
+  .preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .preview-table th {
+    background: var(--navy2);
+    color: var(--white);
+    padding: 8px 10px;
+    text-align: left;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+  }
+
+  .preview-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .preview-table tr:nth-child(even) td {
+    background: #E8F2FB;
+  }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-blue { background: rgba(42,111,192,0.25); color: var(--sky); border: 1px solid rgba(42,111,192,0.4); }
+  .badge-gold { background: rgba(232,184,75,0.2); color: var(--gold); border: 1px solid rgba(232,184,75,0.4); }
+  .badge-green { background: rgba(46,204,113,0.2); color: var(--green); border: 1px solid rgba(46,204,113,0.4); }
+
+  /* ── Tip box ── */
+  .tip {
+    background: rgba(232,184,75,0.08);
+    border: 1px solid rgba(232,184,75,0.3);
+    border-left: 3px solid var(--gold);
+    border-radius: 6px;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.85);
+    margin: 16px 0;
+  }
+
+  .tip strong { color: var(--gold); }
+
+  /* ── Alert ── */
+  .alert {
+    background: rgba(231,76,60,0.1);
+    border: 1px solid rgba(231,76,60,0.3);
+    border-left: 3px solid var(--red);
+    border-radius: 6px;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    color: rgba(255,255,255,0.85);
+    margin: 16px 0;
+  }
+
+  /* ── Entity cards ── */
+  .entity-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: default;
+  }
+
+  .entity-card:hover {
+    border-color: var(--gold);
+    background: rgba(232,184,75,0.06);
+    transform: translateY(-2px);
+  }
+
+  .entity-icon { font-size: 36px; margin-bottom: 10px; }
+  .entity-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .entity-desc { font-size: 12.5px; color: rgba(255,255,255,0.6); line-height: 1.4; }
+
+  /* ── Slug finder ── */
+  .slug-finder {
+    background: var(--navy);
+    border: 1px solid var(--blue);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+  }
+
+  .slug-finder input {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--white);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    margin: 8px 0;
+    outline: none;
+  }
+
+  .slug-finder input:focus {
+    border-color: var(--sky);
+  }
+
+  .slug-finder label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+  }
+
+  #slug-result {
+    margin-top: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    color: var(--green);
+    background: #0A1628;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(46,204,113,0.3);
+    min-height: 38px;
+  }
+
+  .copy-btn {
+    background: var(--blue);
+    border: none;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 8px;
+    transition: background 0.2s;
+  }
+  .copy-btn:hover { background: var(--sky); }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 24px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  @media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    h1 { font-size: 28px; }
+    .logo-icon { font-size: 38px; }
+    nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-block">
+      <div class="logo-icon">🏇</div>
+      <div>
+        <h1>Harness Racing <span>Data Scraper</span></h1>
+        <div class="tagline">harness.com.au → Excel / CSV Exporter</div>
+      </div>
+    </div>
+    <nav>
+      <button class="active" onclick="showSection('setup')">Setup Guide</button>
+      <button onclick="showSection('usage')">Usage</button>
+      <button onclick="showSection('output')">Output Format</button>
+      <button onclick="showSection('slugtool')">Slug Finder</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══ SETUP ══ -->
+  <div id="setup" class="section active">
+
+    <div class="card">
+      <h2>📦 What You Get</h2>
+      <div class="grid-3">
+        <div class="entity-card">
+          <div class="entity-icon">🐴</div>
+          <div class="entity-name">Horses</div>
+          <div class="entity-desc">Profile, race history, stats, bloodlines, upcoming races</div>
+        </div>
+        <div class="entity-card">
+          <div class="entity-icon">👤</div>
+          <div class="entity-name">Trainers</div>
+          <div class="entity-desc">Profile, win stats, full results, stable roster</div>
+        </div>
+        <div class="entity-card">
+          <div class="entity-icon">🎽</div>
+          <div class="entity-name">Drivers</div>
+          <div class="entity-desc">Profile, seasonal stats, race-by-race results</div>
+        </div>
+      </div>
+      <br>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <span class="badge badge-blue">Multi-tab Excel (.xlsx)</span>
+        <span class="badge badge-gold">Combined CSV export</span>
+        <span class="badge badge-green">Bulk scraping mode</span>
+        <span class="badge badge-blue">2+ years of results</span>
+        <span class="badge badge-gold">Auto-formatted tables</span>
+        <span class="badge badge-green">Pedigree / bloodlines</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>⚙️ One-Time Setup (Python)</h2>
+      <p style="color:rgba(255,255,255,0.7);margin-bottom:16px;font-size:14px;">
+        You only need to do this once. Requires Python 3.9+ (free — <a href="https://python.org" style="color:var(--sky)">python.org</a>).
+      </p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h3>Install Python libraries</h3>
+            <p>Open Terminal (Mac/Linux) or Command Prompt (Windows) and run:</p>
+<pre><span class="cmd">pip install</span> requests beautifulsoup4 playwright openpyxl pandas tqdm lxml</pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h3>Install Playwright browser</h3>
+            <p>This lets the scraper handle JavaScript-rendered pages on harness.com.au:</p>
+<pre><span class="cmd">playwright install</span> chromium</pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h3>Download the scraper files</h3>
+            <p>Place <strong>harness_scraper.py</strong> and <strong>horses.txt</strong> in a folder, e.g. <code>~/harness-data/</code></p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h3>Run your first scrape</h3>
+<pre><span class="cmd">cd</span> ~/harness-data
+<span class="cmd">python</span> harness_scraper.py <span class="flag">--horse</span> goodtime-oscar <span class="flag">--playwright</span>
+<span class="ok"># → Creates output/goodtime-oscar.xlsx</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>💡 No-code alternative:</strong> If Python feels too complex, try <strong>Octoparse</strong> (free tier) or <strong>ParseHub</strong> — both are visual point-and-click scrapers that can export to CSV/Excel. However, they're less powerful for the structured multi-tab output you want. The Python approach will give you far better results.
+    </div>
+  </div>
+
+  <!-- ══ USAGE ══ -->
+  <div id="usage" class="section">
+    <div class="card">
+      <h2>🚀 Command Examples</h2>
+
+      <h3 style="color:var(--sky);font-size:15px;margin:16px 0 8px;font-weight:600;">Single Horse</h3>
+<pre><span class="cmd">python</span> harness_scraper.py <span class="flag">--horse</span> goodtime-oscar <span class="flag">--playwright</span>
+<span class="comment"># Output: output/goodtime-oscar.xlsx (6 tabs)</span></pre>
+
+      <h3 style="color:var(--sky);font-size:15px;margin:16px 0 8px;font-weight:600;">Trainer</h3>
+<pre><span class="cmd">python</span> harness_scraper.py <span class="flag">--trainer</span> tammy-langley <span class="flag">--playwright</span>
+<span class="comment"># Output: output/trainer_tammy-langley.xlsx</span></pre>
+
+      <h3 style="color:var(--sky);font-size:15px;margin:16px 0 8px;font-weight:600;">Driver</h3>
+<pre><span class="cmd">python</span> harness_scraper.py <span class="flag">--driver</span> grace-jones <span class="flag">--playwright</span>
+<span class="comment"># Output: output/driver_grace-jones.xlsx</span></pre>
+
+      <h3 style="color:var(--sky);font-size:15px;margin:16px 0 8px;font-weight:600;">Bulk — Many Horses at Once</h3>
+      <p style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:8px;">Edit <code>horses.txt</code> — one URL slug per line:</p>
+<pre><span class="comment"># horses.txt</span>
+goodtime-oscar
+my-mate-luke
+fast-freddie
+another-horse-slug</pre>
+      <p style="color:rgba(255,255,255,0.7);font-size:13px;margin:8px 0;">Then run:</p>
+<pre><span class="cmd">python</span> harness_scraper.py <span class="flag">--bulk</span> horses.txt <span class="flag">--type</span> horse <span class="flag">--out</span> my_horses <span class="flag">--playwright</span>
+<span class="ok"># → Creates individual .xlsx per horse + _combined_results.csv</span></pre>
+    </div>
+
+    <div class="card">
+      <h2>🔍 Finding the URL Slug</h2>
+      <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.6;margin-bottom:14px;">
+        The "slug" is the part of the URL after <code>/horse/</code>, <code>/trainer/</code>, or <code>/driver/</code>.
+      </p>
+      <div class="grid-2">
+        <div>
+<pre style="font-size:12px;">URL:
+harness.com.au/horse/<span style="color:var(--gold)">goodtime-oscar</span>
+
+Slug = <span style="color:var(--gold)">goodtime-oscar</span>
+
+Use: <span class="flag">--horse</span> goodtime-oscar</pre>
+        </div>
+        <div>
+<pre style="font-size:12px;">URL:
+harness.com.au/trainer/<span style="color:var(--gold)">tammy-langley</span>
+
+Slug = <span style="color:var(--gold)">tammy-langley</span>
+
+Use: <span class="flag">--trainer</span> tammy-langley</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert">
+      ⚠️ <strong>Be respectful:</strong> The scraper waits 1.5 seconds between requests. Don't scrape hundreds of pages in one go — space out large bulk runs. This keeps harness.com.au happy and reduces the chance of being blocked.
+    </div>
+  </div>
+
+  <!-- ══ OUTPUT FORMAT ══ -->
+  <div id="output" class="section">
+    <div class="card">
+      <h2>📊 Excel Output — Horse File</h2>
+      <p style="color:rgba(255,255,255,0.7);margin-bottom:16px;font-size:14px;">
+        Each horse gets a single <strong>.xlsx</strong> file with 6 tabs:
+      </p>
+      <div class="tab-list">
+        <div class="tab-pill active-tab">Profile</div>
+        <div class="tab-pill">Race Results</div>
+        <div class="tab-pill">Stats Summary</div>
+        <div class="tab-pill">Upcoming Races</div>
+        <div class="tab-pill">Pedigree</div>
+        <div class="tab-pill">Raw Data</div>
+      </div>
+    </div>
+
+    <div class="card-white">
+      <h2>Tab: Race Results (preview)</h2>
+      <p style="font-size:13px;color:#666;margin-bottom:12px;">All results with sortable columns, auto-filter, frozen header, alternating row colours.</p>
+      <div style="overflow-x:auto;">
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th>Meeting</th>
+              <th>Place</th>
+              <th>Distance</th>
+              <th>Handicap</th>
+              <th>Margin</th>
+              <th>WMR</th>
+              <th>Driver</th>
+              <th>Trainer</th>
+              <th>Price</th>
+              <th>Prize Money</th>
+              <th>Stewards Comments</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Hobart 28/2/26</td><td>10</td><td>2579m SS</td><td>FT Fr5</td><td>34.5m</td><td>2:01.7</td><td>Dylan Ford</td><td>Tammy Langley</td><td>11.00</td><td>-</td><td>PRBT SAL 1</td></tr>
+            <tr><td>Hobart 20/2/26</td><td>8</td><td>2090m SS</td><td>10 Fr1</td><td>10.2m</td><td>2:01.6</td><td>Dylan Ford</td><td>Tammy Langley</td><td>5.00</td><td>-</td><td>GO RRAS DF D/R T CMP 4</td></tr>
+            <tr><td>Burnie</td><td>1</td><td>2180m SS</td><td>FT Fr4</td><td>5.6m</td><td>2:03.3</td><td>Brodie Davis</td><td>Tammy Langley</td><td>9.00</td><td>$5,200</td><td>EBS WFS UCL 10 SWAB</td></tr>
+            <tr><td colspan="11" style="text-align:center;color:#999;font-style:italic;padding:12px;">... 40+ more rows extending back 2 years ...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card-white">
+      <h2>Tab: Profile (preview)</h2>
+      <table class="preview-table" style="max-width:500px;">
+        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Colour</td><td>Bay</td></tr>
+          <tr><td>Sex</td><td>Gelding</td></tr>
+          <tr><td>Foal Date</td><td>Wed, 02 Dec 2020</td></tr>
+          <tr><td>Sire</td><td>RESTREPO</td></tr>
+          <tr><td>Dam</td><td>GOODTIME MELODY</td></tr>
+          <tr><td>Broodmare Sire</td><td>SPORTSWRITER USA</td></tr>
+          <tr><td>Gait</td><td>Pacer</td></tr>
+          <tr><td>Class</td><td>NR62</td></tr>
+          <tr><td>HWOE</td><td>L9 (H$36112.50)</td></tr>
+          <tr><td>Trainer</td><td>Tammy Langley</td></tr>
+          <tr><td>Breeder</td><td>J A Slater, I M Slater</td></tr>
+          <tr><td>Owners</td><td>J A Slater, I M Slater</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>📁 Combined CSV (Bulk Mode)</h2>
+      <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.5;margin-bottom:12px;">
+        When scraping multiple horses, a <strong>_combined_results.csv</strong> is also created — all horses' race results in one flat file, perfect for Excel pivot tables or importing into Google Sheets.
+      </p>
+<pre><span class="comment">output/
+├── goodtime-oscar.xlsx      ← 6-tab workbook
+├── my-mate-luke.xlsx
+├── fast-freddie.xlsx
+└── _combined_results.csv    ← All horses, all results</span></pre>
+    </div>
+  </div>
+
+  <!-- ══ SLUG FINDER ══ -->
+  <div id="slugtool" class="section">
+    <div class="card">
+      <h2>🔗 Slug Extractor Tool</h2>
+      <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.6;margin-bottom:16px;">
+        Paste a harness.com.au URL and this tool will extract the slug you need for the scraper.
+      </p>
+      <div class="slug-finder">
+        <label>Paste URL from harness.com.au</label>
+        <input type="text" id="url-input" placeholder="e.g. https://www.harness.com.au/horse/goodtime-oscar" oninput="extractSlug()">
+        <label style="margin-top:10px;display:block;">Command to run:</label>
+        <div id="slug-result">Paste a URL above ↑</div>
+        <button class="copy-btn" onclick="copySlug()">📋 Copy Command</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Build Your horses.txt</h2>
+      <p style="color:rgba(255,255,255,0.7);font-size:14px;margin-bottom:12px;">
+        Paste multiple URLs (one per line) to generate a bulk list:
+      </p>
+      <div class="slug-finder">
+        <label>Paste multiple harness.com.au URLs (one per line)</label>
+        <textarea id="bulk-input" rows="6" style="width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:10px;color:white;font-family:monospace;font-size:13px;margin:8px 0;resize:vertical;" placeholder="https://www.harness.com.au/horse/goodtime-oscar&#10;https://www.harness.com.au/horse/my-mate-luke&#10;..." oninput="buildBulkList()"></textarea>
+        <label>horses.txt content:</label>
+        <pre id="bulk-result" style="margin-top:8px;min-height:60px;">Paste URLs above ↑</pre>
+        <button class="copy-btn" onclick="copyBulk()">📋 Copy List</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🏟 Common Track Slugs (Tasmania)</h2>
+      <div class="grid-3" style="gap:12px;margin-top:4px;">
+        <div style="background:rgba(255,255,255,0.05);border-radius:6px;padding:12px;">
+          <div style="color:var(--gold);font-weight:700;margin-bottom:4px;">Launceston</div>
+          <code style="font-size:12px;color:var(--sky);">--track launceston</code>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border-radius:6px;padding:12px;">
+          <div style="color:var(--gold);font-weight:700;margin-bottom:4px;">Hobart</div>
+          <code style="font-size:12px;color:var(--sky);">--track hobart</code>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border-radius:6px;padding:12px;">
+          <div style="color:var(--gold);font-weight:700;margin-bottom:4px;">Devonport</div>
+          <code style="font-size:12px;color:var(--sky);">--track devonport</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Harness Racing Data Scraper — for personal/research use only. Respect harness.com.au's terms of service.
+</footer>
+
+<script>
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function extractSlug() {
+    const url = document.getElementById('url-input').value.trim();
+    const resultEl = document.getElementById('slug-result');
+    if (!url) { resultEl.textContent = 'Paste a URL above ↑'; return; }
+
+    const patterns = [
+      { regex: /\/horse\/([^/?#]+)/, flag: '--horse' },
+      { regex: /\/trainer\/([^/?#]+)/, flag: '--trainer' },
+      { regex: /\/driver\/([^/?#]+)/, flag: '--driver' },
+      { regex: /\/track\/([^/?#]+)/, flag: '--track' },
+    ];
+
+    for (const {regex, flag} of patterns) {
+      const match = url.match(regex);
+      if (match) {
+        resultEl.textContent = `python harness_scraper.py ${flag} ${match[1]} --playwright`;
+        return;
+      }
+    }
+    resultEl.textContent = '⚠ Could not detect entity type. Is this a harness.com.au URL?';
+  }
+
+  function copySlug() {
+    const text = document.getElementById('slug-result').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = '📋 Copy Command', 2000);
+    });
+  }
+
+  function buildBulkList() {
+    const input = document.getElementById('bulk-input').value;
+    const lines = input.split('\n');
+    const slugs = [];
+    for (const line of lines) {
+      const match = line.match(/\/horse\/([^/?#\s]+)/);
+      if (match) slugs.push(match[1]);
+    }
+    const resultEl = document.getElementById('bulk-result');
+    if (slugs.length === 0) {
+      resultEl.textContent = 'Paste horse URLs above ↑';
+    } else {
+      resultEl.textContent = '# horses.txt\n' + slugs.join('\n');
+    }
+  }
+
+  function copyBulk() {
+    const text = document.getElementById('bulk-result').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = '📋 Copy List', 2000);
+    });
+  }
+</script>
+</body>
+</html>

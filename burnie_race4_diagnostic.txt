@@ -609,12 +609,12 @@ Andaman Bay           -0.3568 back           0.05x    -0.0178
                                                                                 
   Horse                      Barrier   Driver             Win %   Place %   Sim 
  ───────────────────────────────────────────────────────────────────────────────
-  Away Game                     1      Liam Older         66.0%     68.4%       
-  Modern Jive                   5      Gareth Rattray     33.7%    100.0%       
-  La Pierre                     4      Brent Parish        0.3%     80.9%     $3
-  Andaman Bay                   6      Mark Yole           0.0%     45.9%    $25
-  Nikita Jo                     2      Ryan Backhouse      0.0%      3.2%       
-  Rock Amour                    3      Charlie Castles     0.0%      1.6%       
+  Away Game                     1      Liam Older         66.3%     68.9%       
+  Modern Jive                   5      Gareth Rattray     33.4%    100.0%       
+  La Pierre                     4      Brent Parish        0.3%     82.1%     $3
+  Andaman Bay                   6      Mark Yole           0.0%     44.1%    $50
+  Nikita Jo                     2      Ryan Backhouse      0.0%      3.3%       
+  Rock Amour                    3      Charlie Castles     0.0%      1.5%       
                                                                                 
 
 ─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
@@ -623,11 +623,11 @@ Andaman Bay           -0.3568 back           0.05x    -0.0178
   Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
  ───────────────────────────────────────────────────────────────────────────────
   Away Game                    100%          0%           0%       0%   Leader  
-  Nikita Jo                      0%          6%          45%      49%   Back    
-  Rock Amour                     0%          2%          38%      60%   Back    
-  La Pierre                      0%          0%           7%      93%   Back    
+  Nikita Jo                      0%          4%          45%      51%   Back    
+  Rock Amour                     0%          2%          36%      62%   Back    
+  La Pierre                      0%          0%           6%      94%   Back    
   Modern Jive                    0%          0%           8%      92%   Back    
-  Andaman Bay                    0%          0%           3%      97%   Back    
+  Andaman Bay                    0%          0%           2%      97%   Back    
                                                                                 
 
 ──────────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────────
@@ -635,10 +635,10 @@ Andaman Bay           -0.3568 back           0.05x    -0.0178
   Conditional = wins depend on a specific race shape
   Fragile = win% collapses outside a narrow weight band
 
-  ROBUST       Away Game                     Low-gate 41% / Mid-gate 69% / 
-High-gate 88%
-  FRAGILE      Modern Jive                   Low-gate 58% / Mid-gate 31% / 
-High-gate 12%
+  ROBUST       Away Game                     Low-gate 39% / Mid-gate 69% / 
+High-gate 86%
+  FRAGILE      Modern Jive                   Low-gate 59% / Mid-gate 31% / 
+High-gate 14%
 
 ──────────────────────────────── 4. KEY FACTORS ────────────────────────────────
   Features ranked by discriminating power in this race:
@@ -654,10 +654,10 @@ High-gate 12%
 
 Race overview: Burnie Race 4  (2026-03-13)  |  6 runners  |  2180m  |  Start: MS
 
-STANDOUT: Away Game (66.0% win probability, robust selection). Projects as 
+STANDOUT: Away Game (66.3% win probability, robust selection). Projects as 
 leader runner at the 800m. Consistent performer across weight scenarios.
 
-MAIN DANGER: Modern Jive (33.7%). Likely to race back. FRAGILE — genuine threat 
+MAIN DANGER: Modern Jive (33.4%). Likely to race back. FRAGILE — genuine threat 
 regardless of tempo.
 
 No horses flagged as clear value at current market prices.
@@ -675,11 +675,11 @@ DETAILED 800m POSITION PROBABILITY TABLE
 Horse                    Leader   On Pace   Midfield   Back  MostLikely
 ------------------------------------------------------------------------------
 Away Game                100.0%      0.0%       0.0%   0.0%  Leader
-Nikita Jo                  0.0%      5.9%      45.1%  49.0%  Back
-Rock Amour                 0.0%      2.0%      38.5%  59.5%  Back
-La Pierre                  0.0%      0.1%       6.6%  93.3%  Back
-Modern Jive                0.0%      0.1%       8.0%  91.9%  Back
-Andaman Bay                0.0%      0.0%       2.8%  97.2%  Back
+Nikita Jo                  0.0%      4.4%      44.7%  50.9%  Back
+Rock Amour                 0.0%      1.8%      36.0%  62.2%  Back
+La Pierre                  0.0%      0.1%       6.0%  93.9%  Back
+Modern Jive                0.0%      0.1%       7.6%  92.3%  Back
+Andaman Bay                0.0%      0.0%       2.5%  97.5%  Back
 
 FEATURE IMPORTANCE CHART (discriminating power = std-dev across field)
 ------------------------------------------------------------------------------

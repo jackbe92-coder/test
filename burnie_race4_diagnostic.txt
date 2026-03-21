@@ -39,12 +39,12 @@ Feature
 
 --------------------------------------------------------------------------------------------------------
 gate_speed                      
-      0.8000
-      1.2600
-      1.2600
-      1.6400
-      1.4800
-      1.4800
+     -0.8000
+     -1.2600
+     -1.2600
+     -1.6400
+     -1.4800
+     -1.4800
 
 finishing_speed                 
     -29.1100
@@ -119,12 +119,12 @@ class_relativity
       5.0000
 
 last_800m_pos                   
-      5.6000
-      4.6000
-      5.8000
-      5.2000
-      3.6000
-      3.0000
+     -0.8000
+     -1.6000
+     -1.2000
+     -0.2000
+      0.0000
+     -0.8000
 
 width_penalty                   
      -1.2900
@@ -339,12 +339,12 @@ Feature
 
 --------------------------------------------------------------------------------------------------------
 gate_speed                      
-     -1.9397
-     -0.2238
-     -0.2238
-      1.1937
-      0.5968
-      0.5968
+      1.9397
+      0.2238
+      0.2238
+     -1.1937
+     -0.5968
+     -0.5968
 
 finishing_speed                 
       0.9760
@@ -419,12 +419,12 @@ class_relativity
       1.5309
 
 last_800m_pos                   
-      0.9394
-     -0.0324
-      1.1338
-      0.5507
-     -1.0042
-     -1.5873
+     -0.0610
+     -1.5243
+     -0.7926
+      1.0365
+      1.4023
+     -0.0610
 
 width_penalty                   
       1.1852
@@ -598,12 +598,12 @@ Start type: Mobile (MS) — barrier position determines early running position
                                                                                 
   Horse                      Barrier   Driver             Win %   Place %   Sim 
  ───────────────────────────────────────────────────────────────────────────────
-  La Pierre                     4      Brent Parish       49.9%     99.4%       
-  Modern Jive                   5      Gareth Rattray     42.9%     99.8%       
-  Away Game                     1      Liam Older          6.5%     15.7%      $
-  Nikita Jo                     2      Ryan Backhouse      0.3%      2.4%     $3
-  Rock Amour                    3      Charlie Castles     0.2%      3.3%     $5
-  Andaman Bay                   6      Mark Yole           0.1%     79.4%     $7
+  Away Game                     1      Liam Older         60.5%     63.3%       
+  Modern Jive                   5      Gareth Rattray     39.1%    100.0%       
+  La Pierre                     4      Brent Parish        0.3%     84.0%     $3
+  Andaman Bay                   6      Mark Yole           0.0%     47.8%    $25
+  Nikita Jo                     2      Ryan Backhouse      0.0%      2.2%    $50
+  Rock Amour                    3      Charlie Castles     0.0%      2.7%       
                                                                                 
 
 ─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
@@ -611,12 +611,12 @@ Start type: Mobile (MS) — barrier position determines early running position
                                                                         Most Lik
   Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
  ───────────────────────────────────────────────────────────────────────────────
-  Away Game                     65%         35%           0%       0%   Leader  
-  Nikita Jo                     18%         80%           2%       0%   On Pace 
-  Rock Amour                    11%         84%           5%       0%   On Pace 
-  La Pierre                      6%         74%          19%       0%   On Pace 
-  Modern Jive                    0%         29%          66%       5%   Midfield
-  Andaman Bay                    0%         10%          62%      28%   Midfield
+  Away Game                    100%          0%           0%       0%   Leader  
+  Nikita Jo                      0%          6%          46%      49%   Back    
+  Rock Amour                     0%          2%          39%      59%   Back    
+  La Pierre                      0%          0%           7%      93%   Back    
+  Modern Jive                    0%          0%           8%      92%   Back    
+  Andaman Bay                    0%          0%           3%      97%   Back    
                                                                                 
 
 ──────────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────────
@@ -624,18 +624,16 @@ Start type: Mobile (MS) — barrier position determines early running position
   Conditional = wins depend on a specific race shape
   Fragile = win% collapses outside a narrow weight band
 
-  ROBUST       La Pierre                     Low-gate 39% / Mid-gate 48% / 
-High-gate 64%
-  ROBUST       Modern Jive                   Low-gate 52% / Mid-gate 45% / 
-High-gate 31%
-  CONDITIONAL  Away Game                     Low-gate 9% / Mid-gate 6% / 
-High-gate 5%
+  ROBUST       Away Game                     Low-gate 36% / Mid-gate 60% / 
+High-gate 86%
+  FRAGILE      Modern Jive                   Low-gate 63% / Mid-gate 40% / 
+High-gate 14%
 
 ──────────────────────────────── 4. KEY FACTORS ────────────────────────────────
   Features ranked by discriminating power in this race:
 
   1. Class level vs field                    ██████████████████████████
-  2. 800m run-home momentum                  ████████
+  2. 800m run-home momentum                  ████
   3. Gate speed / early position             ██
   4. Lane width (wide runner discount)       █
   5. Finishing speed (last 400m)             █
@@ -645,16 +643,18 @@ High-gate 5%
 
 Race overview: Burnie Race 4  (2026-03-13)  |  6 runners  |  2180m  |  Start: MS
 
-STANDOUT: La Pierre (49.9% win probability, robust selection). Projects as on 
-pace runner at the 800m. Consistent performer across weight scenarios.
+STANDOUT: Away Game (60.5% win probability, robust selection). Projects as 
+leader runner at the 800m. Consistent performer across weight scenarios.
 
-MAIN DANGER: Modern Jive (42.9%). Likely to race midfield. ROBUST — genuine 
-threat regardless of tempo.
+MAIN DANGER: Modern Jive (39.1%). Likely to race back. FRAGILE — genuine threat 
+regardless of tempo.
 
 No horses flagged as clear value at current market prices.
 
-RACE SHAPE: Expected pace scenario: Away Game likely to lead, with La Pierre, 
-Nikita Jo, Rock Amour on the pace.
+RACE SHAPE: Expected pace scenario: Away Game likely to lead.
+
+FRAGILE SELECTIONS: Modern Jive show elevated win% only under specific weight 
+scenarios. Low confidence even if raw win% appears attractive.
 
 ────────────────────────────────────────────────────────────────────────────────
 
@@ -663,17 +663,17 @@ DETAILED 800m POSITION PROBABILITY TABLE
 ------------------------------------------------------------------------------
 Horse                    Leader   On Pace   Midfield   Back  MostLikely
 ------------------------------------------------------------------------------
-Away Game                 64.6%     35.2%       0.2%   0.0%  Leader
-Nikita Jo                 18.2%     80.1%       1.7%   0.0%  On Pace
-Rock Amour                10.9%     83.6%       5.4%   0.0%  On Pace
-La Pierre                  6.2%     74.3%      19.4%   0.1%  On Pace
-Modern Jive                0.1%     28.6%      66.3%   5.0%  Midfield
-Andaman Bay                0.0%     10.0%      61.9%  28.1%  Midfield
+Away Game                100.0%      0.0%       0.0%   0.0%  Leader
+Nikita Jo                  0.0%      5.8%      45.5%  48.7%  Back
+Rock Amour                 0.0%      1.9%      38.9%  59.2%  Back
+La Pierre                  0.0%      0.0%       6.9%  93.1%  Back
+Modern Jive                0.0%      0.1%       8.3%  91.6%  Back
+Andaman Bay                0.0%      0.0%       2.9%  97.1%  Back
 
 FEATURE IMPORTANCE CHART (discriminating power = std-dev across field)
 ------------------------------------------------------------------------------
    1. Class level vs field (NR delta)            3.2660  ██████████████████████████████████████████████████
-   2. 800m run-home momentum                     1.0290  ███████████████
+   2. 800m run-home momentum                     0.5467  ████████
    3. Gate speed / early position                0.2681  ████
    4. 800m positional margin                     0.2681  ████
    5. 400m positional margin                     0.2570  ███

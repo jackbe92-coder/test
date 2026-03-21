@@ -279,7 +279,13 @@ def _parse_sp(val) -> Optional[float]:
 # ---------------------------------------------------------------------------
 
 def compute_gate_speed(runner: Runner, stride_results: pd.DataFrame) -> Tuple[float, List[str]]:
-    """Average position at 800m mark. Higher = closer to leader (better)."""
+    """Avg metres behind leader at 800m (800_Margin_m), negated so higher = closer to leader (better).
+
+    800_Margin_m = metres behind the leader at the 800m mark. Smaller = better early position.
+    Negated so that horses closest to the leader score highest.
+    Note: position_800m_margin captures the RACE POSITION (1st/2nd/3rd) at 800m as a complementary signal.
+    DEBUG: prints raw 800_Margin_m values before averaging.
+    """
     warnings = []
     runs = _recent_runs(runner, stride_results, GATE_SPEED_LOOKBACK)
     if runs.empty:
@@ -289,14 +295,17 @@ def compute_gate_speed(runner: Runner, stride_results: pd.DataFrame) -> Tuple[fl
     if len(runs) < MIN_RUNS_RELIABLE:
         warnings.append(f"{runner.horse}: only {len(runs)} run(s) in stride_results (< {MIN_RUNS_RELIABLE})")
 
-    # Prefer 800_Margin_m (spec column), fallback to Last_800m_Pos
-    col = '800_Margin_m' if '800_Margin_m' in runs.columns else 'Last_800m_Pos'
-    vals = pd.to_numeric(runs[col], errors='coerce').dropna()
-    if vals.empty and col == '800_Margin_m' and 'Last_800m_Pos' in runs.columns:
-        vals = pd.to_numeric(runs['Last_800m_Pos'], errors='coerce').dropna()
+    if '800_Margin_m' not in runs.columns:
+        return 0.0, warnings
+    vals = pd.to_numeric(runs['800_Margin_m'], errors='coerce').dropna()
     if vals.empty:
         return 0.0, warnings
-    return float(vals.mean()), warnings
+
+    # DEBUG: print raw 800_Margin_m values
+    raw_list = ', '.join(f'{v:.2f}' for v in vals.values)
+    print(f"  [DEBUG gate_speed] {runner.horse}: raw 800_Margin_m = [{raw_list}]  avg={vals.mean():.3f}")
+
+    return -float(vals.mean()), warnings  # negate: smaller margin = closer to leader = higher score
 
 
 def compute_finishing_speed(runner: Runner, stride_results: pd.DataFrame) -> Tuple[float, List[str]]:
@@ -430,15 +439,28 @@ def compute_freshness(runner: Runner, stride_results: pd.DataFrame, race_date: s
 
 
 def compute_last_800m_pos(runner: Runner, stride_results: pd.DataFrame) -> Tuple[float, List[str]]:
-    """Avg Last_800m_Pos over last N runs. Higher = gaining ground in the run home."""
+    """Positions gained in the run home (last 800m to finish).
+
+    Computed as: Last_800m_Pos - Place (race position at 800m minus final finishing position).
+    Positive = moved forward = good finisher. Negative = faded in the run home.
+    DEBUG: prints raw Last_800m_Pos values before transformation.
+    """
     warnings = []
     runs = _recent_runs(runner, stride_results, LAST_800_LOOKBACK)
-    if runs.empty or 'Last_800m_Pos' not in runs.columns:
+    if runs.empty or 'Last_800m_Pos' not in runs.columns or 'Place' not in runs.columns:
         return 0.0, warnings
-    vals = pd.to_numeric(runs['Last_800m_Pos'], errors='coerce').dropna()
-    if vals.empty:
+    pos_800 = pd.to_numeric(runs['Last_800m_Pos'], errors='coerce')
+    place = pd.to_numeric(runs['Place'], errors='coerce')
+
+    # DEBUG: print raw Last_800m_Pos values
+    raw_list = ', '.join(f'{v:.0f}' for v in pos_800.dropna().values)
+    print(f"  [DEBUG last_800m_pos] {runner.horse}: raw Last_800m_Pos = [{raw_list}]")
+
+    gain = pos_800 - place  # positive = moved forward in last 800m = better
+    gain = gain.dropna()
+    if gain.empty:
         return 0.0, warnings
-    return float(vals.mean()), warnings
+    return float(gain.mean()), warnings
 
 
 def compute_width_penalty(runner: Runner, stride_results: pd.DataFrame) -> Tuple[float, List[str]]:

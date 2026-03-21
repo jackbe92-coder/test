@@ -722,92 +722,148 @@ def parse_pdf_form(pdf_path: str, race_no: int = 0) -> RaceInfo:
 def parse_text_form(text: str) -> RaceInfo:
     """Parse a pasted text form into a RaceInfo.
 
-    Attempts to detect:
-      - Track name and date from header lines
-      - One runner per line: tab number, horse name, barrier, driver, trainer, NR
+    Handles three input styles:
 
-    Flexible: will extract as much as it can find.
+    Style A — numbered list with explicit barrier (recommended for paste):
+        1. Away Game — barrier 1 — Liam Older — NR45
+        2. Nikita Jo — barrier 2 — Ryan Backhouse — NR50
+
+    Style B — numbered list, barrier = position (classic sim format):
+        1. Away Game  Liam Older  NR45
+        2. Nikita Jo  Ryan Backhouse  NR50
+
+    Style C — plain name list, barrier from context (no numbers needed):
+        Away Game — barrier 1
+        Nikita Jo — barrier 2
+
+    Header (any style, placed before field):
+        Burnie Race 4 — 13 Mar 2026 — 2180m — Standing start (SS)
+        Start type: SS   Distance: 2180m
+
+    Separators between fields can be " — ", ", ", " | ", or whitespace.
+    NR, Driver, and trainer are all optional.
     """
     info = RaceInfo()
     runners = []
 
     lines = [l.strip() for l in text.splitlines() if l.strip()]
 
-    # --- Header detection (first few lines) ---
-    header_text = ' '.join(lines[:5])
-    track = extract_track(header_text)
-    if track:
-        info.track = track
-    date = parse_date(header_text)
-    if date:
-        info.date = date
+    # --- Scan ALL lines for header metadata (not just first 5) ---
+    # This lets users put "Start type: SS" anywhere in their paste.
+    for line in lines:
+        tl = line.lower()
 
-    # Race number
-    m = re.search(r'[Rr]ace\s+(\d+)', header_text)
-    if m:
-        info.race_no = int(m.group(1))
+        # Track
+        if not info.track:
+            t = extract_track(line)
+            if t:
+                info.track = t
 
-    # Distance
-    m = re.search(r'(\d{3,4})\s*m\b', header_text)
-    if m:
-        info.distance_m = int(m.group(1))
+        # Date
+        if not info.date:
+            d = parse_date(line)
+            if d:
+                info.date = d
 
-    # Start type
-    if re.search(r'\bstanding\b|\bSS\b', header_text, re.IGNORECASE):
-        info.start_type = "SS"
+        # Race number
+        if not info.race_no:
+            m = re.search(r'[Rr]ace\s+(\d+)', line)
+            if m:
+                info.race_no = int(m.group(1))
 
-    # --- Runner line parsing ---
-    # Pattern: optional tab/number, horse name, barrier info, optional driver/trainer/NR
-    # Barriers in harness may be expressed as: Fr1, Fr2, Sr1, 1, 2, Barrier 3
-    runner_pattern = re.compile(
-        r'^(\d{1,2})[\.\):\s]+'                            # tab number
-        r'([A-Z][A-Za-z\s\'\-]+?)'                         # horse name (title/upper case)
-        r'(?:\s+(?:Fr|Sr|Barrier\s*)?(\d{1,2})\b)?'       # optional barrier
-        r'(?:\s+([A-Za-z][\w\s]+?))?'                      # optional driver
-        r'(?:\s*/\s*([A-Za-z][\w\s]+?))?'                  # optional trainer (after /)
-        r'(?:\s+NR\s*(\d+))?'                              # optional NR
-        r'(?:\s+\$?([\d\.]+))?$',                          # optional SP
+        # Distance
+        if not info.distance_m:
+            m = re.search(r'(\d{3,5})\s*m\b', line)
+            if m:
+                info.distance_m = int(m.group(1))
+
+        # Start type — check for SS/standing anywhere in the paste
+        if info.start_type == 'MS':
+            if re.search(r'\bstanding\s+start\b|\bSS\b|\bstart\s*type\s*[:\-–]\s*SS\b',
+                         line, re.IGNORECASE):
+                info.start_type = 'SS'
+
+    # --- Normalise delimiter: replace em-dash / pipe / semicolon with plain comma ---
+    def _norm(s: str) -> str:
+        return re.sub(r'\s*[—–|;]\s*', ', ', s).strip()
+
+    # --- Pattern A: "Horse Name — barrier N [— Driver] [— NR N] [— $SP]" ---
+    # Barrier is explicit; horse name is everything before it.
+    # Works with or without a leading tab number.
+    pat_barrier_explicit = re.compile(
+        r'^(?:(\d{1,2})[\.\):\s]+)?'                # optional tab number
+        r'([A-Za-z][A-Za-z0-9\s\'\-]+?)'            # horse name (greedy up to barrier)
+        r'[,\s]+[Bb]arrier\s+(\d{1,2})'             # "barrier N" — anchor
+        r'(?:[,\s]+([A-Za-z][A-Za-z\s\.]+?))?'      # optional driver
+        r'(?:[,\s]+NR\s*(\d+))?'                    # optional NR
+        r'(?:[,\s]+\$?([\d\.]+))?$',                # optional SP
+        re.IGNORECASE,
+    )
+
+    # --- Pattern B: numbered list where barrier = tab number ---
+    # "1. Away Game  Liam Older  NR45"
+    # Horse name ends at a recognised NR/driver-boundary token.
+    pat_numbered = re.compile(
+        r'^(\d{1,2})[\.\):\s]+'                      # tab number (required)
+        r'([A-Z][A-Za-z0-9\s\'\-]+?)'               # horse name
+        r'(?:\s+(?:Fr|Sr|Barrier\s*)?(\d{1,2})\b)?'  # optional explicit barrier
+        r'(?:\s+([A-Za-z][A-Za-z\s\.]+?))?'          # optional driver
+        r'(?:\s*/\s*([A-Za-z][A-Za-z\s\.]+?))?'      # optional trainer (after /)
+        r'(?:\s+NR\s*(\d+))?'                        # optional NR
+        r'(?:\s+\$?([\d\.]+))?$',
         re.IGNORECASE,
     )
 
     for line in lines:
-        m = runner_pattern.match(line)
+        # Skip obvious header/metadata lines
+        if re.match(r'^(track|date|race|distance|start|field|actual|result|[0-9]+st|[0-9]+nd|[0-9]+rd|[0-9]+th)\b',
+                    line, re.IGNORECASE):
+            continue
+
+        normed = _norm(line)
+
+        # Try Pattern A first (explicit "barrier N" anchor is unambiguous)
+        m = pat_barrier_explicit.match(normed)
         if m:
-            tab_no = int(m.group(1))
-            horse = m.group(2).strip().title()
-            barrier_str = m.group(3)
-            driver = (m.group(4) or '').strip()
-            trainer = (m.group(5) or '').strip()
-            nr_str = m.group(6)
-            sp_str = m.group(7)
-
-            barrier = int(barrier_str) if barrier_str else tab_no  # fallback barrier = tab
-            nr = float(nr_str) if nr_str else 0.0
-            sp = float(sp_str) if sp_str else 0.0
-
+            tab_no   = int(m.group(1)) if m.group(1) else len(runners) + 1
+            horse    = m.group(2).strip().title()
+            barrier  = int(m.group(3))
+            driver   = (m.group(4) or '').strip()
+            nr       = float(m.group(5)) if m.group(5) else 0.0
+            sp       = float(m.group(6)) if m.group(6) else 0.0
             runners.append(Runner(
-                horse=horse,
-                slug=slugify(horse),
-                barrier=barrier,
-                driver=driver,
-                trainer=trainer,
-                nr=nr,
-                tab_no=tab_no,
-                sp=sp,
+                horse=horse, slug=slugify(horse),
+                barrier=barrier, driver=driver,
+                nr=nr, sp=sp, tab_no=tab_no,
+            ))
+            continue
+
+        # Try Pattern B (numbered list)
+        m = pat_numbered.match(normed)
+        if m:
+            tab_no   = int(m.group(1))
+            horse    = m.group(2).strip().title()
+            barrier  = int(m.group(3)) if m.group(3) else tab_no
+            driver   = (m.group(4) or '').strip()
+            trainer  = (m.group(5) or '').strip()
+            nr       = float(m.group(6)) if m.group(6) else 0.0
+            sp       = float(m.group(7)) if m.group(7) else 0.0
+            runners.append(Runner(
+                horse=horse, slug=slugify(horse),
+                barrier=barrier, driver=driver, trainer=trainer,
+                nr=nr, sp=sp, tab_no=tab_no,
             ))
 
     if not runners:
-        # Last resort: pick out anything that looks like a numbered entry
+        # Last resort: any line starting with a capital and containing "barrier N"
         for line in lines:
-            m = re.match(r'^(\d{1,2})[\.\):\s]+([A-Z][A-Z\s\'\-]{2,})', line)
+            m = re.search(r'([A-Z][A-Za-z\s\'\-]+?)\s*[,—–]\s*barrier\s+(\d+)', line, re.IGNORECASE)
             if m:
-                tab_no = int(m.group(1))
-                horse = m.group(2).strip().title()
+                horse   = m.group(1).strip().title()
+                barrier = int(m.group(2))
                 runners.append(Runner(
-                    horse=horse,
-                    slug=slugify(horse),
-                    barrier=tab_no,
-                    tab_no=tab_no,
+                    horse=horse, slug=slugify(horse),
+                    barrier=barrier, tab_no=barrier,
                 ))
 
     info.runners = runners

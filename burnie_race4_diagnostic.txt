@@ -1,0 +1,706 @@
+==============================================================================
+  DIAGNOSTIC LOG — BURNIE RACE 4
+  Friday 13 March 2026  |  2180m  |  Mobile Start  |  5,000 Monte Carlo runs
+==============================================================================
+
+[1/5] PARSING RACE FORM
+------------------------------------------------------------------------------
+Track     : Burnie
+Date      : 2026-03-13
+Race      : 4
+Distance  : 2180m
+Start type: MS
+Runners   : 6
+
+#    Horse                      Barrier Driver                    NR
+----------------------------------------------------------------------
+1    Away Game                        1 Liam Older                45
+2    Nikita Jo                        2 Ryan Backhouse            50
+3    Rock Amour                       3 Charlie Castles           46
+4    La Pierre                        4 Brent Parish              47
+5    Modern Jive                      5 Gareth Rattray            52
+6    Andaman Bay                      6 Mark Yole                 54
+
+[2/5] LOADING DATA
+------------------------------------------------------------------------------
+stride_results  : 251 rows, 17 horses
+stride_profiles : 17 rows
+drivers_profile : 13 rows
+
+[3/5] FEATURE VECTORS (raw, pre-z-score normalisation)
+------------------------------------------------------------------------------
+Feature                         
+   Away Game
+   Nikita Jo
+  Rock Amour
+   La Pierre
+ Modern Jive
+ Andaman Bay
+
+--------------------------------------------------------------------------------------------------------
+gate_speed                      
+      0.6600
+      1.5400
+      0.9400
+      1.0600
+      1.8600
+      1.8400
+
+finishing_speed                 
+    -29.0980
+    -29.4260
+    -29.3120
+    -29.2740
+    -29.5640
+    -29.5800
+
+mile_rate_trend                 
+      0.3990
+     -0.2560
+      0.1190
+      0.2330
+      0.0920
+     -0.0540
+
+venue_win_rate                  
+      0.1670
+      0.0115
+      0.0000
+      0.0340
+      0.2000
+      0.0746
+
+venue_place_rate                
+      0.4000
+      0.1808
+      0.2214
+      0.3500
+      0.4884
+      0.3559
+
+barrier_score                   
+      1.0000
+      0.9167
+      0.8333
+      0.7500
+      0.6667
+      0.5833
+
+driver_venue_rate               
+      0.0476
+      0.0667
+      0.1364
+      0.0000
+      0.0690
+      0.1500
+
+driver_season_winrate           
+      0.1429
+      0.1571
+      0.1818
+      0.1667
+      0.2174
+      0.1765
+
+driver_horse_combo              
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.2713
+      0.1587
+
+class_relativity                
+     -4.0000
+      1.0000
+     -3.0000
+     -2.0000
+      3.0000
+      5.0000
+
+last_800m_pos                   
+      6.4000
+      6.2000
+      7.0000
+      6.6000
+      3.4000
+      3.6000
+
+width_penalty                   
+     -1.4800
+     -1.2000
+     -0.9500
+     -1.4700
+     -1.5200
+     -1.3200
+
+position_800m_margin            
+     -0.6600
+     -1.5400
+     -0.9400
+     -1.0600
+     -1.8600
+     -1.8400
+
+position_400m_margin            
+     -0.8000
+     -1.5000
+     -0.8400
+     -1.1200
+     -1.7000
+     -1.6000
+
+sp_vs_performance               
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+distance_suitability            
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+start_type_rate                 
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.4233
+      0.3333
+
+trainer_form                    
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+track_condition_rate            
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+class_trajectory                
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+winner_beaten_quality           
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+days_since_last_win             
+      0.9041
+      0.4685
+      0.4548
+      0.4712
+      0.8795
+      0.6247
+
+last_win_venue_match            
+      1.0000
+      1.0000
+      1.0000
+      1.0000
+      1.0000
+      1.0000
+
+driver_group_experience         
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+driver_experience_years         
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+distance_optimal_range          
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+career_class_experience         
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+mobile_barrier_rate             
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+stewards_flag                   
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+freshness                       
+      1.0000
+      1.0000
+      1.0000
+      1.0000
+      1.0000
+      1.0000
+
+injury_return                   
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+driver_suspended                
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+field_strength                  
+      0.0812
+      0.0812
+      0.0812
+      0.0812
+      0.0812
+      0.0812
+
+field_size_adjustment           
+      1.0000
+      1.0000
+      1.0000
+      1.0000
+      1.0000
+      1.0000
+
+consistency_score               
+      1.0328
+      1.3166
+      0.4216
+      1.1005
+      1.5239
+      1.4757
+
+driver_experience_years         
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+
+Z-SCORED FEATURES (normalised across field)
+------------------------------------------------------------------------------
+Feature                         
+   Away Game
+   Nikita Jo
+  Rock Amour
+   La Pierre
+ Modern Jive
+ Andaman Bay
+
+--------------------------------------------------------------------------------------------------------
+gate_speed                      
+     -1.4341
+      0.4878
+     -0.8226
+     -0.5606
+      1.1866
+      1.1429
+
+finishing_speed                 
+      1.6436
+     -0.2979
+      0.3769
+      0.6018
+     -1.1148
+     -1.2095
+
+mile_rate_trend                 
+      1.4980
+     -1.6655
+      0.1457
+      0.6963
+      0.0153
+     -0.6898
+
+venue_win_rate                  
+      1.1204
+     -0.9098
+     -1.0599
+     -0.6160
+      1.5513
+     -0.0860
+
+venue_place_rate                
+      0.6458
+     -1.4595
+     -1.0690
+      0.1657
+      1.4944
+      0.2227
+
+barrier_score                   
+      1.4639
+      0.8783
+      0.2928
+     -0.2928
+     -0.8783
+     -1.4639
+
+driver_venue_rate               
+     -0.5972
+     -0.2260
+      1.1318
+     -1.5249
+     -0.1813
+      1.3975
+
+driver_season_winrate           
+     -1.3248
+     -0.7117
+      0.3474
+     -0.3029
+      1.8741
+      0.1179
+
+driver_horse_combo              
+     -0.6733
+     -0.6733
+     -0.6733
+     -0.6733
+      1.8755
+      0.8178
+
+class_relativity                
+     -1.2247
+      0.3062
+     -0.9186
+     -0.6124
+      0.9186
+      1.5309
+
+last_800m_pos                   
+      0.5940
+      0.4569
+      1.0052
+      0.7311
+     -1.4621
+     -1.3250
+
+width_penalty                   
+     -0.7844
+      0.6175
+      1.8693
+     -0.7344
+     -0.9847
+      0.0167
+
+position_800m_margin            
+      1.4341
+     -0.4878
+      0.8226
+      0.5606
+     -1.1866
+     -1.1429
+
+position_400m_margin            
+      1.2804
+     -0.6680
+      1.1691
+      0.3897
+     -1.2247
+     -0.9464
+
+sp_vs_performance               
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+distance_suitability            
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+start_type_rate                 
+     -0.6997
+     -0.6997
+     -0.6997
+     -0.6997
+      1.6490
+      1.1500
+
+trainer_form                    
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+track_condition_rate            
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+class_trajectory                
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+winner_beaten_quality           
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+days_since_last_win             
+      1.4140
+     -0.8646
+     -0.9363
+     -0.8503
+      1.2850
+     -0.0478
+
+last_win_venue_match            
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+driver_group_experience         
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+driver_experience_years         
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+distance_optimal_range          
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+career_class_experience         
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+mobile_barrier_rate             
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+      0.0000
+
+
+  No data warnings — all horses found in dataset.
+
+[4/5] TRACK PROFILE — BURNIE POSITION MULTIPLIERS
+------------------------------------------------------------------------------
+Track length : 607m
+Straight     : 95m
+Sprint lane  : False
+Leader win % : 68.0%
+Garden seat  : 0.0%
+
+Fixed position multipliers applied post-score each simulation run:
+  leader              : 2.80x  ████████████████████████████
+  on_pace             : 0.50x  █████
+  midfield            : 0.10x  █
+  back                : 0.05x  
+
+Weight overrides vs baseline:
+  w_barrier                     : +0.30 / +0.30  (boosted)
+  w_finishing_speed             : -0.20 / -0.20  (reduced)
+
+Start type: Mobile (MS) — barrier position determines early running position
+  Pace gap thresholds:
+    leader gap    ≤ 0.4
+    on_pace gap   ≤ 1.2
+    midfield gap  ≤ 2.5
+    back          > 2.5
+
+[5/5] MONTE CARLO SIMULATION — 5,000 RUNS
+==============================================================================
+────────   MONTE CARLO RACE SIMULATION — BURNIE Race 4  (5,000 runs)   ─────────
+
+───────────────────────────── 1. PROBABILITY TABLE ─────────────────────────────
+                                                                                
+  Horse                      Barrier   Driver             Win %   Place %   Sim 
+ ───────────────────────────────────────────────────────────────────────────────
+  Away Game                     1      Liam Older         75.0%     90.9%       
+  Rock Amour                    3      Charlie Castles    15.1%     87.9%       
+  Modern Jive                   5      Gareth Rattray      9.3%     96.2%      $
+  Andaman Bay                   6      Mark Yole           0.5%     23.7%     $2
+  Nikita Jo                     2      Ryan Backhouse      0.1%      0.7%    $10
+  La Pierre                     4      Brent Parish        0.0%      0.6%    $50
+                                                                                
+
+─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
+                                                                                
+                                                                        Most Lik
+  Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
+ ───────────────────────────────────────────────────────────────────────────────
+  Away Game                     87%         12%           0%       0%   Leader  
+  Nikita Jo                     81%         18%           1%       0%   Leader  
+  Rock Amour                    19%         69%          12%       0%   On Pace 
+  La Pierre                      5%         51%          44%       0%   On Pace 
+  Modern Jive                    1%         25%          69%       6%   Midfield
+  Andaman Bay                    0%         14%          61%      25%   Midfield
+                                                                                
+
+──────────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────────
+  Robust = wins >20%+ across all weight scenarios
+  Conditional = wins depend on a specific race shape
+  Fragile = win% collapses outside a narrow weight band
+
+  ROBUST       Away Game                     Low-gate 74% / Mid-gate 76% / 
+High-gate 74%
+  CONDITIONAL  Rock Amour                    Low-gate 13% / Mid-gate 14% / 
+High-gate 19%
+  CONDITIONAL  Modern Jive                   Low-gate 12% / Mid-gate 9% / 
+High-gate 6%
+
+──────────────────────────────── 4. KEY FACTORS ────────────────────────────────
+  Features ranked by discriminating power in this race:
+
+  1. Class level vs field                    ██████████████████████████
+  2. 800m run-home momentum                  ███████████
+  3. Gate speed / early position             ███
+  4. Form trend (improving/declining)        █
+  5. Lane width (wide runner discount)       █
+  6. Finishing speed (last 400m)             █
+
+───────────────────────────── 5. ANALYST NARRATIVE ─────────────────────────────
+
+Race overview: Burnie Race 4  (2026-03-13)  |  6 runners  |  2180m  |  Start: MS
+
+STANDOUT: Away Game (75.0% win probability, robust selection). Projects as 
+leader runner at the 800m. Consistent performer across weight scenarios.
+
+MAIN DANGER: Rock Amour (15.1%). Likely to race on pace. CONDITIONAL — most 
+dangerous if race develops into a leader track.
+
+No horses flagged as clear value at current market prices.
+
+RACE SHAPE: Expected pace scenario: Away Game, Nikita Jo likely to lead, with 
+Rock Amour, La Pierre on the pace.
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+DETAILED 800m POSITION PROBABILITY TABLE
+------------------------------------------------------------------------------
+Horse                    Leader   On Pace   Midfield   Back  MostLikely
+------------------------------------------------------------------------------
+Away Game                 87.5%     12.2%       0.3%   0.0%  Leader
+Nikita Jo                 81.0%     18.3%       0.7%   0.0%  Leader
+Rock Amour                19.3%     68.7%      12.0%   0.0%  On Pace
+La Pierre                  5.2%     50.5%      43.7%   0.5%  On Pace
+Modern Jive                0.8%     24.8%      68.7%   5.7%  Midfield
+Andaman Bay                0.3%     13.7%      61.1%  25.0%  Midfield
+
+FEATURE IMPORTANCE CHART (discriminating power = std-dev across field)
+------------------------------------------------------------------------------
+   1. Class level vs field (NR delta)            3.2660  ██████████████████████████████████████████████████
+   2. 800m run-home momentum                     1.4591  ██████████████████████
+   3. Gate speed / early position                0.4579  ███████
+   4. 800m positional margin                     0.4579  ███████
+   5. 400m positional margin                     0.3593  █████
+   6. Form trend (improving/declining)           0.2071  ███
+   7. Lane width (wide runner discount)          0.1997  ███
+   8. Days since last win (drought)              0.1912  ██
+   9. Mobile/standing start rate                 0.1802  ██
+  10. Finishing speed (last 400m)                0.1689  ██
+  11. Barrier / draw advantage                   0.1423  ██
+  12. Driver-horse combination history           0.1064  █
+  13. Track-specific place rate                  0.1041  █
+  14. Track-specific win rate                    0.0766  █
+  15. Driver venue record                        0.0513  █
+  16. Driver season win rate                     0.0233  █
+  17. SP vs actual performance (value)           0.0000  █
+  18. Distance suitability                       0.0000  █
+  19. Trainer form (recent wins)                 0.0000  █
+  20. Track condition win rate                   0.0000  █
+  21. Class trajectory (moving up/down)          0.0000  █
+  22. Quality of horses beaten                   0.0000  █
+  23. Last win at this venue                     0.0000  █
+  24. Driver group-race experience               0.0000  █
+  25. Driver experience (years)                  0.0000  █
+  26. Distance optimal range match               0.0000  █
+  27. Career class experience                    0.0000  █
+  28. Mobile barrier win rate                    0.0000  █
+
+==============================================================================
+  END OF DIAGNOSTIC LOG — BURNIE RACE 4  13 Mar 2026
+==============================================================================

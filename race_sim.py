@@ -34,7 +34,7 @@ from report_generator import generate_report
 from track_profiles import apply_track_profile
 from sim_config import (
     WEIGHT_RANGES, TRACK_OVERRIDES, STANDING_START_BARRIER_ADJUSTMENT,
-    DEFAULT_RUNS, PACE_GAP_LEADER, PACE_GAP_ON_PACE, PACE_GAP_MIDFIELD,
+    DEFAULT_RUNS, PACE_GAP_ON_PACE_STDEV, PACE_GAP_MIDFIELD_STDEV,
     FIELD_STRENGTH_BASELINE,
 )
 
@@ -269,14 +269,13 @@ def run_single(
     return finish_order, pace_order, pace_positions
 
 
-def assign_pace_bucket(rank: int, n_runners: int, leader_score: float, my_score: float) -> str:
-    """Classify pace position based on z-score gap from leader."""
+def assign_pace_bucket(rank: int, n_runners: int, leader_score: float, my_score: float,
+                       field_std: float = 1.0) -> str:
+    """Classify pace position based on relative gap from leader (stdev-scaled)."""
     gap = leader_score - my_score
-    if gap <= PACE_GAP_LEADER:
-        return 'leader'
-    elif gap <= PACE_GAP_ON_PACE:
+    if gap <= PACE_GAP_ON_PACE_STDEV * field_std:
         return 'on_pace'
-    elif gap <= PACE_GAP_MIDFIELD:
+    elif gap <= PACE_GAP_MIDFIELD_STDEV * field_std:
         return 'midfield'
     else:
         return 'back'

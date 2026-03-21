@@ -15,7 +15,7 @@ import numpy as np
 
 from sim_config import (
     TRACK_PROFILES,
-    PACE_GAP_LEADER, PACE_GAP_ON_PACE, PACE_GAP_MIDFIELD,
+    PACE_GAP_ON_PACE_STDEV, PACE_GAP_MIDFIELD_STDEV,
 )
 
 
@@ -32,11 +32,15 @@ def assign_pace_positions(pace_scores: Dict[str, float], track: str) -> Dict[str
 
     Stochastic: pace_scores already include per-run luck noise from the caller.
 
-    Only ONE horse is assigned 'leader' per run.  When multiple horses fall
-    within PACE_GAP_LEADER of the field maximum, the leader is chosen
-    probabilistically, weighted by each candidate's pace score, so the
-    horse with the higher pace score wins the leader slot more often but not
-    exclusively.  The remaining candidates are assigned 'on_pace'.
+    Thresholds are RELATIVE to the field's pace-score std-dev each run, so one
+    dominant horse cannot collapse the rest of the field to 'back'.
+
+      on_pace  : gap ≤ PACE_GAP_ON_PACE_STDEV  × field_std
+      midfield : gap ≤ PACE_GAP_MIDFIELD_STDEV × field_std
+      back     : gap >  PACE_GAP_MIDFIELD_STDEV × field_std
+
+    The top horse is always the leader candidate.  If the #2 horse is within
+    the on_pace threshold it also competes for the lead via a weighted draw.
 
     Position labels:
       Standard tracks:  leader | on_pace | midfield | back
@@ -49,18 +53,27 @@ def assign_pace_positions(pace_scores: Dict[str, float], track: str) -> Dict[str
 
     profile = _resolve_profile(track)
     has_sprint_lane = profile.get('sprint_lane', False)
-    leader_score = max(pace_scores.values())
 
-    # All horses within PACE_GAP_LEADER of the max compete for the single lead slot
-    candidates = [s for s, sc in pace_scores.items() if leader_score - sc <= PACE_GAP_LEADER]
+    scores_arr = np.array(list(pace_scores.values()), dtype=float)
+    leader_score = float(scores_arr.max())
+    field_std = float(scores_arr.std()) if len(scores_arr) > 1 else 1.0
+    if field_std < 1e-6:
+        field_std = 1.0
+
+    on_pace_gap  = PACE_GAP_ON_PACE_STDEV  * field_std
+    midfield_gap = PACE_GAP_MIDFIELD_STDEV * field_std
+
+    # Top horse + any horse within on_pace_gap compete for the single lead slot
+    sorted_slugs = sorted(pace_scores, key=pace_scores.__getitem__, reverse=True)
+    candidates = [s for s in sorted_slugs if leader_score - pace_scores[s] <= on_pace_gap]
 
     if len(candidates) == 1:
         leader_slug = candidates[0]
     else:
         # Weighted draw: higher pace score = higher probability of leading
         raw = np.array([pace_scores[s] for s in candidates], dtype=float)
-        raw -= raw.min()        # shift to ≥ 0
-        raw += 1e-6             # avoid zero weights if all equal
+        raw -= raw.min()   # shift to ≥ 0
+        raw += 1e-6        # avoid zero weights if all equal
         probs = raw / raw.sum()
         leader_slug = candidates[int(np.random.choice(len(candidates), p=probs))]
 
@@ -70,14 +83,14 @@ def assign_pace_positions(pace_scores: Dict[str, float], track: str) -> Dict[str
             positions[slug] = 'leader'
             continue
         gap = leader_score - score
-        if gap <= PACE_GAP_ON_PACE:
+        if gap <= on_pace_gap:
             if has_sprint_lane:
                 # Garden seat: on-pace runner that can access the sprint lane.
                 # ~55% probability per run (stochastic — depends on race dynamics).
                 positions[slug] = 'garden_seat' if np.random.random() < 0.55 else 'midfield_runner'
             else:
                 positions[slug] = 'on_pace'
-        elif gap <= PACE_GAP_MIDFIELD:
+        elif gap <= midfield_gap:
             positions[slug] = 'midfield'
         else:
             positions[slug] = 'back'
@@ -118,9 +131,19 @@ def apply_track_profile(
 
     positions = assign_pace_positions(pace_scores, track)
 
+    profile = _resolve_profile(track)
+    cap_back = profile.get('cap_back_score', False)
+    field_avg = float(np.mean(list(main_scores.values()))) if cap_back else None
+
     adjusted: Dict[str, float] = {}
     for slug, score in main_scores.items():
         pos = positions.get(slug, 'midfield')
+        # Fix: at tight tracks (e.g. Burnie 607m) class cannot compensate for
+        # poor position.  Cap the pre-multiplier score to the field average for
+        # any horse that is NOT leader or on_pace.  This prevents a high-NR horse
+        # that is midfield/back from outscoring the actual leader post-multiply.
+        if cap_back and pos not in ('leader', 'on_pace', 'garden_seat') and field_avg is not None:
+            score = min(score, field_avg)
         mult = get_position_multiplier(track, pos)
         adjusted[slug] = score * mult
 

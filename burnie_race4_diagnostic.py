@@ -143,12 +143,14 @@ else:
     p("  (none — default weights apply)")
 p()
 p("Start type: Mobile (MS) — barrier position determines early running position")
-from sim_config import PACE_GAP_LEADER, PACE_GAP_ON_PACE, PACE_GAP_MIDFIELD
-p(f"  Pace gap thresholds:")
-p(f"    leader gap    ≤ {PACE_GAP_LEADER}")
-p(f"    on_pace gap   ≤ {PACE_GAP_ON_PACE}")
-p(f"    midfield gap  ≤ {PACE_GAP_MIDFIELD}")
-p(f"    back          > {PACE_GAP_MIDFIELD}")
+from sim_config import PACE_GAP_ON_PACE_STDEV, PACE_GAP_MIDFIELD_STDEV
+p(f"  Pace gap thresholds (relative to field std-dev each run):")
+p(f"    on_pace  : gap ≤ {PACE_GAP_ON_PACE_STDEV} × field_std")
+p(f"    midfield : gap ≤ {PACE_GAP_MIDFIELD_STDEV} × field_std")
+p(f"    back     : gap >  {PACE_GAP_MIDFIELD_STDEV} × field_std")
+cap_back = profile.get("cap_back_score", False)
+cap_label = "YES - capped to field avg before 0.05x applied" if cap_back else "No"
+p(f"  Back-marker score cap : {cap_label}")
 
 # ── 4b. Pre/Post Multiplier Validation ───────────────────────────────────────
 p("\n[4b] PRE/POST MULTIPLIER SCORES (single illustrative pass — midpoint weights)")

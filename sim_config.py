@@ -152,10 +152,11 @@ FRAGILE_VARIANCE_THRESHOLD = 0.15  # win% std-dev across weight bands > this = f
 VALUE_EDGE_THRESHOLD = 0.05    # sim win% at least 5pp above implied SP% = VALUE
 OVERBET_EDGE_THRESHOLD = -0.05  # sim win% at least 5pp below implied SP% = OVERBET
 
-# Speed map position categories (z-score gap from leader in pace score)
-PACE_GAP_LEADER = 0.4    # within this z-score gap = Leader
-PACE_GAP_ON_PACE = 1.2   # within this = On Pace
-PACE_GAP_MIDFIELD = 2.5  # within this = Midfield; above = Back Marker
+# Speed map position categories — relative to field std-dev of pace scores each run.
+# Using field-relative thresholds prevents one dominant horse from collapsing all
+# others to 'back' (which happened with fixed absolute gaps).
+PACE_GAP_ON_PACE_STDEV   = 1.5   # within 1.5 × field_std of leader = leader/on_pace
+PACE_GAP_MIDFIELD_STDEV  = 3.0   # within 3.0 × field_std = midfield; beyond = back
 
 # ---------------------------------------------------------------------------
 # Venue name normalisation map (handle abbreviations / alternate spellings)
@@ -234,6 +235,9 @@ TRACK_PROFILES = {
             'midfield': 0.1,
             'back':     0.05,
         },
+        # Cap back-marker pre-multiplier score to field average before applying 0.05x.
+        # Prevents dominant class scores from overriding track reality at a 607m circuit.
+        'cap_back_score': True,
         'gate_speed_weight_boost':    0.5,
         'barrier_weight_boost':       0.4,
         'finishing_weight_penalty':  -0.3,

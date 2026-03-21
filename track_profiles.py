@@ -32,6 +32,12 @@ def assign_pace_positions(pace_scores: Dict[str, float], track: str) -> Dict[str
 
     Stochastic: pace_scores already include per-run luck noise from the caller.
 
+    Only ONE horse is assigned 'leader' per run.  When multiple horses fall
+    within PACE_GAP_LEADER of the field maximum, the leader is chosen
+    probabilistically, weighted by each candidate's pace score, so the
+    horse with the higher pace score wins the leader slot more often but not
+    exclusively.  The remaining candidates are assigned 'on_pace'.
+
     Position labels:
       Standard tracks:  leader | on_pace | midfield | back
       Hobart (sprint lane): leader | garden_seat | midfield_runner | midfield | back
@@ -45,23 +51,36 @@ def assign_pace_positions(pace_scores: Dict[str, float], track: str) -> Dict[str
     has_sprint_lane = profile.get('sprint_lane', False)
     leader_score = max(pace_scores.values())
 
+    # All horses within PACE_GAP_LEADER of the max compete for the single lead slot
+    candidates = [s for s, sc in pace_scores.items() if leader_score - sc <= PACE_GAP_LEADER]
+
+    if len(candidates) == 1:
+        leader_slug = candidates[0]
+    else:
+        # Weighted draw: higher pace score = higher probability of leading
+        raw = np.array([pace_scores[s] for s in candidates], dtype=float)
+        raw -= raw.min()        # shift to ≥ 0
+        raw += 1e-6             # avoid zero weights if all equal
+        probs = raw / raw.sum()
+        leader_slug = candidates[int(np.random.choice(len(candidates), p=probs))]
+
     positions = {}
     for slug, score in pace_scores.items():
+        if slug == leader_slug:
+            positions[slug] = 'leader'
+            continue
         gap = leader_score - score
-        if gap <= PACE_GAP_LEADER:
-            label = 'leader'
-        elif gap <= PACE_GAP_ON_PACE:
+        if gap <= PACE_GAP_ON_PACE:
             if has_sprint_lane:
                 # Garden seat: on-pace runner that can access the sprint lane.
                 # ~55% probability per run (stochastic — depends on race dynamics).
-                label = 'garden_seat' if np.random.random() < 0.55 else 'midfield_runner'
+                positions[slug] = 'garden_seat' if np.random.random() < 0.55 else 'midfield_runner'
             else:
-                label = 'on_pace'
+                positions[slug] = 'on_pace'
         elif gap <= PACE_GAP_MIDFIELD:
-            label = 'midfield'
+            positions[slug] = 'midfield'
         else:
-            label = 'back'
-        positions[slug] = label
+            positions[slug] = 'back'
 
     return positions
 

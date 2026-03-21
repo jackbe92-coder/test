@@ -81,11 +81,16 @@ for display, slug, barrier, driver, nr, n_runs in HOBART_HORSES:
         base_800m  = max(0.5, (nr - 60) * -0.3 + random.uniform(-2, 4))
         mile_rate  = 115.0 + random.uniform(-3, 3) - (nr - 60) * 0.1
         trend      = i * 0.05
+        sp_raw = round(random.uniform(2.5, 18.0), 1)
         stride_rows.append({
             "Horse": display, "Slug": slug, "Date": date,
             "Track": "Hobart" if random.random() > 0.3 else random.choice(["Launceston", "Burnie"]),
             "Race_No": random.randint(1, 8), "Place": place, "Driver": driver,
-            "Trainer": f"Trainer_{slug[:6]}", "Field_Size": field_size,
+            "Trainer": driver,  # use driver name so trainer fallback lookup works
+            "Field_Size": field_size,
+            "Starters": field_size,
+            "Distance_m": random.choice([1609, 1609, 2080, 2620]),
+            "SP": f"${sp_raw}",
             "800_Margin_m":  round(base_800m + trend, 1),
             "400_Margin_m":  round(base_800m * 0.6 + random.uniform(-1, 2), 1),
             "Last_800m_Pos": max(1, place - 1 + random.randint(-1, 2)),
@@ -106,11 +111,16 @@ for display, slug, barrier, driver, nr, n_runs, _wp in BURNIE_HORSES:
         base_800m  = max(0.3, (nr - 45) * 0.12 + random.uniform(-0.5, 2.0))
         mile_rate  = 116.0 + random.uniform(-2, 2) + (nr - 45) * 0.06
         trend      = i * 0.04
+        sp_raw = round(random.uniform(2.0, 15.0), 1)
         stride_rows.append({
             "Horse": display, "Slug": slug, "Date": date,
             "Track": "Burnie" if random.random() > 0.35 else random.choice(["Hobart", "Launceston"]),
             "Race_No": random.randint(1, 8), "Place": place, "Driver": driver,
-            "Trainer": f"Trainer_{slug[:6]}", "Field_Size": field_size,
+            "Trainer": driver,  # use driver name so trainer fallback lookup works
+            "Field_Size": field_size,
+            "Starters": field_size,
+            "Distance_m": random.choice([2180, 2180, 1609, 2620]),
+            "SP": f"${sp_raw}",
             "800_Margin_m":  round(base_800m + trend, 1),
             "400_Margin_m":  round(base_800m * 0.55 + random.uniform(-0.5, 1.5), 1),
             "Last_800m_Pos": max(1, place - 1 + random.randint(-1, 2)),
@@ -232,16 +242,26 @@ print(f"✓ driver_results_recent.csv — {len(dr_rows)} rows")
 
 # ---------------------------------------------------------------------------
 # trainer_results_recent.csv
+# Keyed by driver name (= Trainer value in stride_results) so the driver-name
+# fallback in compute_trainer_form() finds real records.
 # ---------------------------------------------------------------------------
 tr_rows = []
-all_slugs = [h[1] for h in HOBART_HORSES] + [h[1] for h in BURNIE_HORSES]
-for slug in all_slugs:
-    tr = f"Trainer_{slug[:6]}"
-    for _ in range(random.randint(5, 20)):
+for display, slug, barrier, driver, nr, n_runs in HOBART_HORSES:
+    win_rate = max(0.05, (nr - 60) / 80 + random.uniform(-0.05, 0.1))
+    for _ in range(random.randint(8, 18)):
         tr_rows.append({
-            "Trainer": tr,
-            "Track":   random.choice(["Burnie", "Hobart", "Launceston"]),
-            "Place":   random.randint(1, 8),
+            "Trainer": driver,
+            "Track":   random.choice(["Hobart", "Hobart", "Launceston", "Burnie"]),
+            "Place":   1 if random.random() < win_rate else random.randint(2, 10),
+            "Date":    (HOBART_DATE - timedelta(days=random.randint(1, 90))).strftime("%Y-%m-%d"),
+        })
+for display, slug, barrier, driver, nr, n_runs, _wp in BURNIE_HORSES:
+    win_rate = max(0.05, (nr - 45) / 120 + random.uniform(-0.05, 0.1))
+    for _ in range(random.randint(8, 18)):
+        tr_rows.append({
+            "Trainer": driver,
+            "Track":   random.choice(["Burnie", "Burnie", "Hobart", "Launceston"]),
+            "Place":   1 if random.random() < win_rate else random.randint(2, 8),
             "Date":    (BURNIE_DATE - timedelta(days=random.randint(1, 90))).strftime("%Y-%m-%d"),
         })
 pd.DataFrame(tr_rows).to_csv(os.path.join(OUT, "trainer_results_recent.csv"), index=False)
@@ -249,9 +269,10 @@ print(f"✓ trainer_results_recent.csv — {len(tr_rows)} rows")
 
 
 # ---------------------------------------------------------------------------
-# stewards_notes.csv  — Hobart Race 4 incidents
+# stewards_notes.csv  — incidents across both meetings
 # ---------------------------------------------------------------------------
 sn_rows = [
+    # Hobart Race 4 — Sun 15 Mar 2026
     {"Horse": "Ray Dan",         "Horse_Slug": "ray-dan",
      "Date": "2026-03-15", "Note": "checked at 400m, held up for clear run"},
     {"Horse": "Imperial Laz NZ", "Horse_Slug": "imperial-laz-nz",
@@ -260,6 +281,12 @@ sn_rows = [
      "Date": "2026-03-15", "Note": "broke a hopple strap at 400m — eased to finish"},
     {"Horse": "Ray Dan",         "Horse_Slug": "ray-dan",
      "Date": "2026-02-20", "Note": "galloped when checked near 400m mark"},
+    # Burnie Race 4 — Fri 13 Mar 2026
+    # Rock Amour: two prior concern notes that should downweight it
+    {"Horse": "Rock Amour",      "Horse_Slug": "rock-amour",
+     "Date": "2026-02-28", "Note": "galloped out approaching the home turn — lost all momentum"},
+    {"Horse": "Rock Amour",      "Horse_Slug": "rock-amour",
+     "Date": "2026-02-14", "Note": "pulled hard in the early stages, unruly at start"},
 ]
 pd.DataFrame(sn_rows).to_csv(os.path.join(OUT, "stewards_notes.csv"), index=False)
 print(f"✓ stewards_notes.csv   — {len(sn_rows)} rows")

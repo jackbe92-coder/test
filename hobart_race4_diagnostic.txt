@@ -49,7 +49,7 @@ gate_speed
       0.6200
       0.7200
       1.4200
-      0.7400
+      0.7000
       0.6200
       0.6200
       0.6200
@@ -62,53 +62,53 @@ finishing_speed
     -29.2420
     -29.0420
     -29.3180
-    -29.0620
-    -28.9180
-    -28.9920
-    -29.0420
-    -28.6520
-    -28.6380
-    -28.6560
-    -28.8420
+    -29.0920
+    -28.9340
+    -29.1380
+    -29.0460
+    -28.6940
+    -28.9040
+    -28.5540
+    -28.8020
 
 mile_rate_trend                 
       0.3770
      -0.3620
       0.6350
-      0.1330
-      0.1110
-     -0.3810
-      0.6820
-     -0.2110
-      0.3960
-     -0.7370
-      0.7350
+     -0.0730
+     -0.8370
+     -0.6590
+      0.1880
+      0.6420
+      0.0550
+      0.5850
+     -0.3650
 
 venue_win_rate                  
-      0.0153
-      0.0692
-      0.0792
-      0.1079
-      0.1545
-      0.0980
-      0.1500
-      0.0906
-      0.1658
-      0.1699
-      0.1853
+      0.0233
+      0.0670
+      0.0785
+      0.1246
+      0.1796
+      0.0287
+      0.1641
+      0.1740
+      0.0747
+      0.2118
+      0.2765
 
 venue_place_rate                
-      0.0931
-      0.1461
-      0.3163
-      0.2791
-      0.3019
-      0.4278
-      0.2750
-      0.4068
-      0.5349
-      0.3992
-      0.4970
+      0.2947
+      0.3333
+      0.3779
+      0.4333
+      0.4190
+      0.1331
+      0.5327
+      0.3971
+      0.3518
+      0.5405
+      0.5250
 
 barrier_score                   
       1.0000
@@ -124,42 +124,42 @@ barrier_score
       0.1667
 
 driver_venue_rate               
-      0.1333
+      0.0769
+      0.2000
+      0.0769
+      0.0769
       0.0000
-      0.1333
-      0.1333
       0.0000
-      0.2308
-      0.2857
-      0.0833
-      0.1333
-      0.1250
-      0.2308
+      0.1818
+      0.0000
+      0.0769
+      0.1818
+      0.0000
 
 driver_season_winrate           
-      0.1475
-      0.2105
-      0.1475
-      0.1475
-      0.2131
-      0.1481
-      0.1522
-      0.1270
-      0.1475
-      0.1739
-      0.1481
+      0.2340
+      0.1967
+      0.2340
+      0.2340
+      0.1923
+      0.2113
+      0.1143
+      0.1406
+      0.2340
+      0.2115
+      0.2113
 
 driver_horse_combo              
       0.0000
       0.0000
       0.0000
       0.0000
-      0.0917
       0.0000
       0.0000
-      0.0259
       0.0000
-      0.0813
+      0.0000
+      0.0000
+      0.0857
       0.0000
 
 class_relativity                
@@ -176,36 +176,36 @@ class_relativity
       3.9091
 
 last_800m_pos                   
-     10.0000
+      8.2000
      11.4000
       7.4000
-     10.8000
-      4.0000
-     10.2000
-      5.2000
-      5.2000
-      7.6000
-      5.4000
+     10.0000
+      5.8000
+      9.4000
+     10.0000
       7.2000
+      9.8000
+      4.2000
+      7.4000
 
 width_penalty                   
      -2.2100
      -2.0000
      -1.9000
-     -1.4300
-     -1.4400
-     -1.3300
-     -2.0800
-     -1.8100
-     -1.7100
+     -1.3400
      -1.5000
-     -1.9900
+     -1.6800
+     -1.6300
+     -1.5400
+     -1.7200
+     -1.6000
+     -1.9500
 
 position_800m_margin            
      -0.6200
      -0.7200
      -1.4200
-     -0.7400
+     -0.7000
      -0.6200
      -0.6200
      -0.6200
@@ -218,14 +218,14 @@ position_400m_margin
      -1.0400
      -1.4600
      -0.8600
-     -1.4400
-     -0.2800
-     -1.0000
-     -0.5800
-     -0.5600
+     -1.3000
+     -0.3800
      -0.8000
-     -0.1800
-     -1.0200
+     -0.6200
+     -0.8600
+     -0.3600
+     -0.1200
+     -0.7400
 
 sp_vs_performance               
       0.0000
@@ -258,12 +258,12 @@ start_type_rate
       0.0000
       0.0000
       0.0000
-      0.3500
       0.0000
       0.0000
-      0.0778
       0.0000
-      0.2625
+      0.0000
+      0.0000
+      0.3000
       0.0000
 
 trainer_form                    
@@ -319,17 +319,17 @@ winner_beaten_quality
       0.0000
 
 days_since_last_win             
-      0.8000
-      0.8685
-      0.6575
-      0.7671
-      0.8219
-      0.5096
-      0.4685
-      0.5945
-      0.8438
-      0.5260
-      0.6575
+      0.5315
+      0.8603
+      0.8466
+      0.7425
+      0.8959
+      0.5808
+      0.5452
+      0.7096
+      0.4959
+      0.8849
+      0.4548
 
 last_win_venue_match            
       1.0000
@@ -462,17 +462,17 @@ driver_suspended
       0.0000
 
 field_strength                  
-      0.1095
-      0.1095
-      0.1095
-      0.1095
-      0.1095
-      0.1095
-      0.1095
-      0.1095
-      0.1095
-      0.1095
-      0.1095
+      0.1251
+      0.1251
+      0.1251
+      0.1251
+      0.1251
+      0.1251
+      0.1251
+      0.1251
+      0.1251
+      0.1251
+      0.1251
 
 field_size_adjustment           
       1.0000
@@ -488,17 +488,17 @@ field_size_adjustment
       1.0000
 
 consistency_score               
-      1.1650
+      1.9226
       1.2464
-      1.9408
-      0.8819
-      0.9832
-      1.1402
-      1.2817
-      1.5811
-      2.1671
-      2.0310
+      2.2887
+      1.3229
+      1.7269
+      2.0817
       1.4142
+      1.9024
+      1.6421
+      2.4103
+      2.5635
 
 driver_experience_years         
       0.0000
@@ -531,69 +531,69 @@ Feature
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 gate_speed                      
-     -0.4074
-      0.0320
-      3.1075
-      0.1198
-     -0.4074
-     -0.4074
-     -0.4074
-     -0.4074
-     -0.4074
-     -0.4074
-     -0.4074
+     -0.3917
+      0.0480
+      3.1255
+     -0.0400
+     -0.3917
+     -0.3917
+     -0.3917
+     -0.3917
+     -0.3917
+     -0.3917
+     -0.3917
 
 finishing_speed                 
-     -1.3405
-     -0.4353
-     -1.6845
-     -0.5258
-      0.1259
-     -0.2090
-     -0.4353
-      1.3298
-      1.3932
-      1.3117
-      0.4699
+     -1.1978
+     -0.2879
+     -1.5436
+     -0.5153
+      0.2035
+     -0.7246
+     -0.3061
+      1.2954
+      0.3400
+      1.9323
+      0.8040
 
 mile_rate_trend                 
-      0.5357
-     -1.0370
-      1.0848
-      0.0164
-     -0.0304
-     -1.0774
-      1.1848
-     -0.7156
-      0.5761
-     -1.8350
-      1.2976
+      0.7216
+     -0.7593
+      1.2386
+     -0.1802
+     -1.7111
+     -1.3544
+      0.3428
+      1.2526
+      0.0763
+      1.1384
+     -0.7653
 
 venue_win_rate                  
-     -2.0301
-     -0.9537
-     -0.7529
-     -0.1802
-      0.7523
-     -0.3771
-      0.6624
-     -0.5250
-      0.9782
-      1.0591
-      1.3670
+     -1.3564
+     -0.7873
+     -0.6378
+     -0.0381
+      0.6772
+     -1.2855
+      0.4763
+      0.6051
+     -0.6872
+      1.0961
+      1.9376
 
 venue_place_rate                
-     -1.8523
-     -1.4458
-     -0.1381
-     -0.4239
-     -0.2486
-      0.7180
-     -0.4554
-      0.5571
-      1.5407
-      0.4984
-      1.2499
+     -0.8718
+     -0.5342
+     -0.1446
+      0.3400
+      0.2156
+     -2.2865
+      1.2103
+      0.0234
+     -0.3728
+      1.2780
+      1.1427
 
 barrier_score                   
       1.5811
@@ -609,43 +609,43 @@ barrier_score
      -1.5811
 
 driver_venue_rate               
-     -0.0237
-     -1.5843
-     -0.0237
-     -0.0237
-     -1.5843
-      1.1168
-      1.7599
-     -0.6089
-     -0.0237
-     -0.1212
-      1.1168
+     -0.0308
+      1.6252
+     -0.0308
+     -0.0308
+     -1.0658
+     -1.0658
+      1.3805
+     -1.0658
+     -0.0308
+      1.3805
+     -1.0658
 
 driver_season_winrate           
-     -0.4843
-      1.9088
-     -0.4843
-     -0.4843
-      2.0071
-     -0.4613
-     -0.3083
-     -1.2654
-     -0.4843
-      0.5177
-     -0.4613
+      0.8602
+     -0.1200
+      0.8602
+      0.8602
+     -0.2359
+      0.2621
+     -2.2851
+     -1.5933
+      0.8602
+      0.2692
+      0.2621
 
 driver_horse_combo              
-     -0.5454
-     -0.5454
-     -0.5454
-     -0.5454
-      2.2205
-     -0.5454
-     -0.5454
-      0.2368
-     -0.5454
-      1.9062
-     -0.5454
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+      3.1623
+     -0.3162
 
 class_relativity                
      -1.1360
@@ -661,56 +661,56 @@ class_relativity
       0.8723
 
 last_800m_pos                   
-      0.9454
-      1.5141
-     -0.1108
-      1.2704
-     -1.4919
-      1.0266
-     -1.0045
-     -1.0045
-     -0.0295
-     -0.9232
-     -0.1920
+     -0.0271
+      1.5599
+     -0.4238
+      0.8656
+     -1.2173
+      0.5681
+      0.8656
+     -0.5230
+      0.7664
+     -2.0107
+     -0.4238
 
 width_penalty                   
-     -1.5573
-     -0.8247
-     -0.4758
-      1.1640
-      1.1292
-      1.5129
-     -1.1038
-     -0.1618
-      0.1871
-      0.9198
-     -0.7898
+     -1.9581
+     -1.0949
+     -0.6838
+      1.6180
+      0.9603
+      0.2205
+      0.4260
+      0.7959
+      0.0561
+      0.5493
+     -0.8893
 
 position_800m_margin            
-      0.4074
-     -0.0320
-     -3.1075
-     -0.1198
-      0.4074
-      0.4074
-      0.4074
-      0.4074
-      0.4074
-      0.4074
-      0.4074
+      0.3917
+     -0.0480
+     -3.1255
+      0.0400
+      0.3917
+      0.3917
+      0.3917
+      0.3917
+      0.3917
+      0.3917
+      0.3917
 
 position_400m_margin            
-     -0.5075
-     -1.5637
-     -0.0549
-     -1.5134
-      1.4036
-     -0.4069
-      0.6492
-      0.6995
-      0.0960
-      1.6551
-     -0.4572
+     -0.6885
+     -1.7855
+     -0.2184
+     -1.3676
+      1.0352
+     -0.0617
+      0.4084
+     -0.2184
+      1.0874
+      1.7142
+      0.0950
 
 sp_vs_performance               
       0.0000
@@ -739,17 +739,17 @@ distance_suitability
       0.0000
 
 start_type_rate                 
-     -0.5301
-     -0.5301
-     -0.5301
-     -0.5301
-      2.4266
-     -0.5301
-     -0.5301
-      0.1269
-     -0.5301
-      1.6874
-     -0.5301
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+     -0.3162
+      3.1623
+     -0.3162
 
 trainer_form                    
       0.0000
@@ -804,17 +804,17 @@ winner_beaten_quality
       0.0000
 
 days_since_last_win             
-      0.8450
-      1.3405
-     -0.1856
-      0.6072
-      1.0036
-     -1.2558
-     -1.5531
-     -0.6414
-      1.1622
-     -1.1369
-     -0.1856
+     -0.9561
+      1.0762
+      0.9915
+      0.3479
+      1.2963
+     -0.6512
+     -0.8714
+      0.1447
+     -1.1762
+      1.2286
+     -1.4303
 
 last_win_venue_match            
       0.0000
@@ -931,17 +931,17 @@ Sprint lane position assignment (stochastic, per run):
                                                                                 
   Horse                      Barrier   Driver             Win %   Place %   Sim 
  ───────────────────────────────────────────────────────────────────────────────
-  Imperial Laz Nz               5      Juanita Mckenzie   64.6%     93.8%       
-  Cuzzy Bro                    10      Todd Rattray       20.5%     89.3%       
-  Mr Bondi Nz                   9      Wayne Yole          6.5%     54.8%      $
-  Ray Dan                       6      Tammy Langley       5.3%     31.5%      $
-  Captain Pins Nz              11      Tammy Langley       2.3%     21.1%      $
-  Custom Harley                 7      Heath Woods         0.5%      5.3%     $1
-  Zara Tindall Nz               8      Michael Laugher     0.2%      2.4%     $4
-  Always Aurora                 2      Adrian Duggan       0.1%      1.0%    $16
-  My Way Nz                     4      Wayne Yole          0.0%      0.8%    $25
-  James Cagney Nz               1      Wayne Yole          0.0%      0.0%       
-  Thee Old Bomb Nz              3      Wayne Yole          0.0%      0.0%       
+  Cuzzy Bro                    10      Todd Rattray       95.0%    100.0%       
+  My Way Nz                     4      Wayne Yole          1.6%     45.5%      $
+  Always Aurora                 2      Adrian Duggan       1.1%     16.3%      $
+  Zara Tindall Nz               8      Michael Laugher     0.8%     39.2%     $1
+  Custom Harley                 7      Heath Woods         0.4%     20.7%     $2
+  Mr Bondi Nz                   9      Wayne Yole          0.4%     38.6%     $2
+  Imperial Laz Nz               5      Juanita Mckenzie    0.3%     22.4%     $3
+  Captain Pins Nz              11      Tammy Langley       0.2%     14.8%     $5
+  Thee Old Bomb Nz              3      Wayne Yole          0.1%      1.9%    $10
+  James Cagney Nz               1      Wayne Yole          0.0%      0.4%    $25
+  Ray Dan                       6      Tammy Langley       0.0%      0.1%       
                                                                                 
 
 ─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
@@ -949,17 +949,17 @@ Sprint lane position assignment (stochastic, per run):
                                                                         Most Lik
   Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
  ───────────────────────────────────────────────────────────────────────────────
-  Thee Old Bomb Nz              87%         13%           0%       0%   Leader  
-  Always Aurora                 70%         29%           1%       0%   Leader  
-  James Cagney Nz               63%         35%           2%       0%   Leader  
-  My Way Nz                     30%         65%           5%       0%   On Pace 
-  Ray Dan                        8%         61%          31%       0%   On Pace 
-  Mr Bondi Nz                    2%         25%          67%       6%   Midfield
-  Imperial Laz Nz                1%         37%          61%       1%   Midfield
-  Custom Harley                  1%         27%          69%       3%   Midfield
-  Captain Pins Nz                1%         17%          60%      22%   Midfield
-  Zara Tindall Nz                1%         21%          72%       7%   Midfield
-  Cuzzy Bro                      0%         15%          66%      19%   Midfield
+  Thee Old Bomb Nz              86%         13%           0%       0%   Leader  
+  Always Aurora                 78%         21%           1%       0%   Leader  
+  James Cagney Nz               47%         49%           4%       0%   On Pace 
+  My Way Nz                     24%         70%           6%       0%   On Pace 
+  Ray Dan                        6%         61%          32%       0%   On Pace 
+  Custom Harley                  6%         52%          41%       0%   On Pace 
+  Mr Bondi Nz                    3%         34%          60%       2%   Midfield
+  Imperial Laz Nz                2%         45%          52%       1%   Midfield
+  Zara Tindall Nz                1%         28%          68%       3%   Midfield
+  Captain Pins Nz                1%         17%          61%      22%   Midfield
+  Cuzzy Bro                      0%         10%          62%      27%   Midfield
                                                                                 
 
 ──────────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────────
@@ -967,23 +967,17 @@ Sprint lane position assignment (stochastic, per run):
   Conditional = wins depend on a specific race shape
   Fragile = win% collapses outside a narrow weight band
 
-  ROBUST       Imperial Laz Nz               Low-gate 72% / Mid-gate 64% / 
-High-gate 59%
-  CONDITIONAL  Cuzzy Bro                     Low-gate 19% / Mid-gate 20% / 
-High-gate 23%
-  CONDITIONAL  Mr Bondi Nz                   Low-gate 5% / Mid-gate 7% / 
-High-gate 7%
-  CONDITIONAL  Ray Dan                       Low-gate 2% / Mid-gate 6% / 
-High-gate 7%
+  ROBUST       Cuzzy Bro                     Low-gate 97% / Mid-gate 95% / 
+High-gate 93%
 
 ──────────────────────────────── 4. KEY FACTORS ────────────────────────────────
   Features ranked by discriminating power in this race:
 
   1. Class level vs field                    ███████████████████████████████████
-  2. 800m run-home momentum                  ███████████████████
+  2. 800m run-home momentum                  ████████████████
   3. Form trend (improving/declining)        ███
-  4. Lane width (wide runner discount)       ██
-  5. Barrier / draw advantage                ██
+  4. Barrier / draw advantage                ██
+  5. Lane width (wide runner discount)       █
   6. Gate speed / early position             █
 
 ───────────────────────────── 5. ANALYST NARRATIVE ─────────────────────────────
@@ -991,16 +985,17 @@ High-gate 7%
 Race overview: Hobart Race 4  (2026-03-15)  |  11 runners  |  1609m  |  Start: 
 MS
 
-STANDOUT: Imperial Laz Nz (64.6% win probability, robust selection). Projects as
+STANDOUT: Cuzzy Bro (95.0% win probability, robust selection). Projects as 
 midfield runner at the 800m. Consistent performer across weight scenarios.
 
-MAIN DANGER: Cuzzy Bro (20.5%). Likely to race midfield. CONDITIONAL — most 
+MAIN DANGER: My Way Nz (1.6%). Likely to race on pace. CONDITIONAL — most 
 dangerous if race develops into a midfield track.
 
 No horses flagged as clear value at current market prices.
 
-RACE SHAPE: Expected pace scenario: Always Aurora, My Way Nz, James Cagney Nz, 
-Thee Old Bomb Nz likely to lead, with Imperial Laz Nz, Ray Dan on the pace.
+RACE SHAPE: Expected pace scenario: Always Aurora, Thee Old Bomb Nz, James 
+Cagney Nz likely to lead, with My Way Nz, Custom Harley, Mr Bondi Nz, Imperial 
+Laz Nz, Ray Dan on the pace.
 
 ────────────────────────────────────────────────────────────────────────────────
 
@@ -1009,36 +1004,36 @@ DETAILED 800m POSITION PROBABILITY TABLE
 ------------------------------------------------------------------------------
 Horse                          Leader   GardenSt   MidRun   Midfield   Back  MostLikely
 ------------------------------------------------------------------------------
-Thee Old Bomb Nz                86.5%      13.0%     0.0%       0.4%   0.0%  Leader
-Always Aurora                   69.8%      29.1%     0.0%       1.1%   0.0%  Leader
-James Cagney Nz                 63.1%      35.0%     0.0%       1.9%   0.0%  Leader
-My Way Nz                       30.1%      64.7%     0.0%       5.2%   0.0%  On Pace
-Ray Dan                          7.5%      61.2%     0.0%      31.2%   0.1%  On Pace
-Mr Bondi Nz                      1.6%      25.1%     0.0%      67.3%   6.0%  Midfield
-Imperial Laz Nz                  1.4%      36.6%     0.0%      61.0%   0.9%  Midfield
-Custom Harley                    1.3%      26.6%     0.0%      69.3%   2.8%  Midfield
-Captain Pins Nz                  0.9%      16.7%     0.0%      60.3%  22.1%  Midfield
-Zara Tindall Nz                  0.7%      20.7%     0.0%      72.0%   6.6%  Midfield
-Cuzzy Bro                        0.4%      14.6%     0.0%      65.7%  19.3%  Midfield
+Thee Old Bomb Nz                86.4%      13.4%     0.0%       0.2%   0.0%  Leader
+Always Aurora                   78.4%      20.9%     0.0%       0.7%   0.0%  Leader
+James Cagney Nz                 46.9%      49.3%     0.0%       3.8%   0.0%  On Pace
+My Way Nz                       24.1%      69.5%     0.0%       6.4%   0.0%  On Pace
+Ray Dan                          6.5%      60.8%     0.0%      32.5%   0.2%  On Pace
+Custom Harley                    5.9%      52.2%     0.0%      41.4%   0.5%  On Pace
+Mr Bondi Nz                      3.4%      34.2%     0.0%      60.0%   2.4%  Midfield
+Imperial Laz Nz                  2.4%      44.9%     0.0%      52.1%   0.7%  Midfield
+Zara Tindall Nz                  1.5%      27.8%     0.0%      67.7%   3.1%  Midfield
+Captain Pins Nz                  0.8%      16.6%     0.0%      60.7%  21.9%  Midfield
+Cuzzy Bro                        0.2%      10.4%     0.0%      62.4%  27.0%  Midfield
 
 FEATURE IMPORTANCE CHART (discriminating power = std-dev across field)
 ------------------------------------------------------------------------------
    1. Class level vs field (NR delta)            4.4814  ██████████████████████████████████████████████████
-   2. 800m run-home momentum                     2.4617  ███████████████████████████
-   3. Form trend (improving/declining)           0.4699  █████
-   4. 400m positional margin                     0.3977  ████
-   5. Lane width (wide runner discount)          0.2866  ███
-   6. Barrier / draw advantage                   0.2635  ██
-   7. Gate speed / early position                0.2276  ██
-   8. 800m positional margin                     0.2276  ██
-   9. Finishing speed (last 400m)                0.2209  ██
-  10. Days since last win (drought)              0.1382  █
-  11. Track-specific place rate                  0.1302  █
-  12. Mobile/standing start rate                 0.1184  █
-  13. Driver venue record                        0.0854  █
-  14. Track-specific win rate                    0.0500  █
-  15. Driver-horse combination history           0.0331  █
-  16. Driver season win rate                     0.0263  █
+   2. 800m run-home momentum                     2.0165  ██████████████████████
+   3. Form trend (improving/declining)           0.4990  █████
+   4. 400m positional margin                     0.3829  ████
+   5. Barrier / draw advantage                   0.2635  ██
+   6. Lane width (wide runner discount)          0.2433  ██
+   7. Gate speed / early position                0.2275  ██
+   8. 800m positional margin                     0.2275  ██
+   9. Finishing speed (last 400m)                0.2198  ██
+  10. Days since last win (drought)              0.1618  █
+  11. Track-specific place rate                  0.1143  █
+  12. Mobile/standing start rate                 0.0862  █
+  13. Track-specific win rate                    0.0769  █
+  14. Driver venue record                        0.0743  █
+  15. Driver season win rate                     0.0381  █
+  16. Driver-horse combination history           0.0246  █
   17. SP vs actual performance (value)           0.0000  █
   18. Distance suitability                       0.0000  █
   19. Trainer form (recent wins)                 0.0000  █

@@ -129,16 +129,66 @@ class DataLoader:
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+_COUNTRY_SUFFIXES = ('nz', 'gb', 'ire', 'ir', 'us', 'fr', 'de')
+
+
+def normalise_horse_name(name: str) -> str:
+    """Normalise country suffix to uppercase, e.g. 'Imperial Laz Nz' → 'Imperial Laz NZ'."""
+    name = name.strip()
+    parts = name.split()
+    if parts and parts[-1].lower() in _COUNTRY_SUFFIXES:
+        parts[-1] = parts[-1].upper()
+        return ' '.join(parts)
+    return name
+
+
+def _horse_lookup_keys(runner: Runner):
+    """Return (slug, slug_nz, name_norm_lower) for all lookup variants.
+
+    Handles three common mismatches between PDF form names and stride CSV storage:
+      1. Form 'My Way Nz' vs CSV slug 'my-way-nz'   — slug match works directly
+      2. Form 'Always Aurora' vs CSV slug 'always-aurora' — slug match works
+      3. Form 'Always Aurora' vs CSV slug 'always-aurora-nz' — need -nz fallback
+    """
+    slug = runner.slug.lower().strip()
+    # Slug with -nz suffix (for horses stored with suffix that the PDF omitted)
+    slug_nz = slug if slug.endswith('-nz') else slug + '-nz'
+    name_norm = normalise_horse_name(runner.horse).lower().strip()
+    # Also try with NZ suffix appended if name has no suffix
+    name_parts = name_norm.split()
+    if name_parts and name_parts[-1] not in _COUNTRY_SUFFIXES:
+        name_norm_nz = name_norm + ' nz'
+    else:
+        name_norm_nz = name_norm
+    return slug, slug_nz, name_norm, name_norm_nz
+
+
 def _recent_runs(runner: Runner, df: pd.DataFrame, n: int) -> pd.DataFrame:
-    """Return the n most recent rows from stride_results for this horse."""
+    """Return the n most recent rows from stride_results for this horse.
+
+    Tries four lookup strategies in order:
+      1. Exact slug match
+      2. Slug with -nz suffix (PDF may omit country suffix)
+      3. Normalised horse name (uppercase suffix)
+      4. Normalised name + ' nz' suffix
+    """
     if df.empty:
         return pd.DataFrame()
-    slug = runner.slug.lower().strip()
+    slug, slug_nz, name_norm, name_norm_nz = _horse_lookup_keys(runner)
+    horse_col = df['Horse'].str.lower().str.strip() if 'Horse' in df.columns else None
+
+    # 1. Exact slug
     mask = df['_slug'] == slug
-    if not mask.any():
-        # Fallback: fuzzy match by horse name
-        horse_lower = runner.horse.lower().strip()
-        mask = df['Horse'].str.lower().str.strip() == horse_lower
+    # 2. Slug + -nz
+    if not mask.any() and slug_nz != slug:
+        mask = df['_slug'] == slug_nz
+    # 3. Normalised name
+    if not mask.any() and horse_col is not None:
+        mask = horse_col == name_norm
+    # 4. Normalised name + nz
+    if not mask.any() and horse_col is not None and name_norm_nz != name_norm:
+        mask = horse_col == name_norm_nz
+
     result = df[mask].copy()
     if 'Date' in result.columns:
         result = result.sort_values('Date', ascending=False)
@@ -146,14 +196,27 @@ def _recent_runs(runner: Runner, df: pd.DataFrame, n: int) -> pd.DataFrame:
 
 
 def _profile_row(runner: Runner, profiles: pd.DataFrame) -> Optional[pd.Series]:
-    """Return stride_profiles row for this horse."""
+    """Return stride_profiles row for this horse.
+
+    Tries four lookup strategies matching _recent_runs.
+    """
     if profiles.empty:
         return None
-    slug = runner.slug.lower().strip()
+    slug, slug_nz, name_norm, name_norm_nz = _horse_lookup_keys(runner)
+    horse_col = profiles['Horse'].str.lower().str.strip() if 'Horse' in profiles.columns else None
+
+    # 1. Exact slug
     rows = profiles[profiles['_slug'] == slug]
-    if rows.empty:
-        horse_lower = runner.horse.lower().strip()
-        rows = profiles[profiles['Horse'].str.lower().str.strip() == horse_lower]
+    # 2. Slug + -nz
+    if rows.empty and slug_nz != slug:
+        rows = profiles[profiles['_slug'] == slug_nz]
+    # 3. Normalised name
+    if rows.empty and horse_col is not None:
+        rows = profiles[horse_col == name_norm]
+    # 4. Normalised name + nz
+    if rows.empty and horse_col is not None and name_norm_nz != name_norm:
+        rows = profiles[horse_col == name_norm_nz]
+
     return rows.iloc[0] if not rows.empty else None
 
 
@@ -399,11 +462,17 @@ def compute_stewards_flag(
     if stewards_notes.empty:
         return 0.0, warnings
 
-    slug = runner.slug.lower().strip()
+    slug, slug_nz, name_norm, name_norm_nz = _horse_lookup_keys(runner)
     if 'Horse_Slug' in stewards_notes.columns:
-        mask = stewards_notes['Horse_Slug'].str.lower().str.strip() == slug
+        slug_col = stewards_notes['Horse_Slug'].str.lower().str.strip()
+        mask = slug_col == slug
+        if not mask.any() and slug_nz != slug:
+            mask = slug_col == slug_nz
     else:
-        mask = stewards_notes['Horse'].str.lower().str.strip() == runner.horse.lower().strip()
+        horse_col = stewards_notes['Horse'].str.lower().str.strip()
+        mask = horse_col == name_norm
+        if not mask.any() and name_norm_nz != name_norm:
+            mask = horse_col == name_norm_nz
 
     notes_df = stewards_notes[mask].copy()
     if 'Date' in notes_df.columns:
@@ -428,11 +497,17 @@ def compute_injury_return(
     if stewards_stand_downs.empty:
         return 0.0, warnings
 
-    slug = runner.slug.lower().strip()
+    slug, slug_nz, name_norm, name_norm_nz = _horse_lookup_keys(runner)
     if 'Horse_Slug' in stewards_stand_downs.columns:
-        mask = stewards_stand_downs['Horse_Slug'].str.lower().str.strip() == slug
+        slug_col = stewards_stand_downs['Horse_Slug'].str.lower().str.strip()
+        mask = slug_col == slug
+        if not mask.any() and slug_nz != slug:
+            mask = slug_col == slug_nz
     else:
-        mask = stewards_stand_downs['Horse'].str.lower().str.strip() == runner.horse.lower().strip()
+        horse_col = stewards_stand_downs['Horse'].str.lower().str.strip()
+        mask = horse_col == name_norm
+        if not mask.any() and name_norm_nz != name_norm:
+            mask = horse_col == name_norm_nz
 
     rows = stewards_stand_downs[mask]
     if rows.empty:

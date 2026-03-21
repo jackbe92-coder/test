@@ -1377,11 +1377,13 @@ def compute_mobile_barrier_rate(
     if runs.empty:
         return 0.0, warnings
 
-    ms_runs = runs[runs['Start_Type'].astype(str).str.upper().str.strip() == 'MS']
+    ms_runs = runs[runs['Start_Type'].astype(str).str.upper().str.strip() == 'MS'].reset_index(drop=True)
     if ms_runs.empty:
         return 0.0, warnings
 
-    barrier_mask = pd.to_numeric(ms_runs.get('Barrier', pd.Series(dtype=float)), errors='coerce') == barrier
+    if 'Barrier' not in ms_runs.columns:
+        return 0.0, warnings
+    barrier_mask = pd.to_numeric(ms_runs['Barrier'], errors='coerce').values == barrier
     matched = ms_runs[barrier_mask]
     n = len(matched)
 

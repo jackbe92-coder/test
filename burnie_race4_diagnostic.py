@@ -150,6 +150,90 @@ p(f"    on_pace gap   ≤ {PACE_GAP_ON_PACE}")
 p(f"    midfield gap  ≤ {PACE_GAP_MIDFIELD}")
 p(f"    back          > {PACE_GAP_MIDFIELD}")
 
+# ── 4b. Pre/Post Multiplier Validation ───────────────────────────────────────
+p("\n[4b] PRE/POST MULTIPLIER SCORES (single illustrative pass — midpoint weights)")
+p("-" * 78)
+from race_sim import _effective_weight_ranges, PACE_FEATURES
+from sim_config import WEIGHT_RANGES
+
+# Compute using midpoint of effective weight ranges for this track/start type
+eff_ranges = _effective_weight_ranges(race_info.track, race_info.start_type)
+mid_weights = {k: (lo + hi) / 2.0 for k, (lo, hi) in eff_ranges.items()}
+
+z_single = zscore_field(all_features, slugs, SCORED_FEATURES)
+
+# Compute pre-multiplier main score and pace score per horse
+pre_scores  = {}
+pace_scores = {}
+for slug in slugs:
+    z = z_single.get(slug, {})
+    raw = all_features.get(slug, {})
+
+    s = (
+        mid_weights['w_gate_speed'] * (
+            z.get('gate_speed', 0)           * 0.35 +
+            z.get('last_800m_pos', 0)         * 0.20 +
+            z.get('position_800m_margin', 0)  * 0.30 +
+            z.get('position_400m_margin', 0)  * 0.15
+        ) +
+        mid_weights['w_finishing_speed'] * (
+            z.get('finishing_speed', 0) * 0.70 +
+            z.get('width_penalty', 0)   * 0.30
+        ) +
+        mid_weights['w_barrier'] * (
+            z.get('barrier_score', 0)      * 0.50 +
+            z.get('start_type_rate', 0)    * 0.25 +
+            z.get('mobile_barrier_rate', 0) * 0.25
+        ) +
+        mid_weights['w_venue_rate'] * (
+            z.get('venue_win_rate', 0)        * 0.45 +
+            z.get('venue_place_rate', 0)      * 0.25 +
+            z.get('last_win_venue_match', 0)  * 0.15 +
+            z.get('track_condition_rate', 0)  * 0.15
+        ) +
+        mid_weights['w_driver']         * z.get('driver_venue_rate', 0) +
+        mid_weights['w_driver_quality'] * z.get('driver_season_winrate', 0) +
+        mid_weights['w_driver_combo']   * z.get('driver_horse_combo', 0) +
+        mid_weights['w_class'] * (
+            z.get('class_relativity', 0)       * 0.50 +
+            z.get('class_trajectory', 0)       * 0.30 +
+            z.get('career_class_experience', 0) * 0.20
+        ) +
+        mid_weights['w_trend'] * (
+            z.get('mile_rate_trend', 0)       * 0.50 +
+            z.get('winner_beaten_quality', 0) * 0.30 +
+            z.get('days_since_last_win', 0)   * 0.20
+        ) +
+        mid_weights['w_value']    * z.get('sp_vs_performance', 0) +
+        mid_weights['w_distance'] * (
+            z.get('distance_suitability', 0)   * 0.55 +
+            z.get('distance_optimal_range', 0) * 0.45
+        ) +
+        mid_weights['w_trainer']  * z.get('trainer_form', 0)
+    )
+    pre_scores[slug] = s
+
+    pace_scores[slug] = (
+        mid_weights['w_gate_speed'] * (
+            z.get('gate_speed', 0)          * 0.50 +
+            z.get('position_800m_margin', 0) * 0.35 +
+            z.get('last_800m_pos', 0)        * 0.15
+        ) +
+        mid_weights['w_barrier'] * z.get('barrier_score', 0) * 0.5
+    )
+
+from track_profiles import apply_track_profile as _atp
+post_scores, pace_positions_demo = _atp(pre_scores, pace_scores, race_info.track)
+
+p(f"{'Horse':<18} {'Pre-mult':>10} {'Position':<12} {'Mult':>6} {'Post-mult':>10}")
+p("-" * 60)
+for slug in slugs:
+    pos  = pace_positions_demo.get(slug, 'midfield')
+    mult = get_position_multiplier(race_info.track, pos)
+    pre  = pre_scores[slug]
+    post = post_scores[slug]
+    p(f"{names[slug]:<18} {pre:>10.4f} {pos:<12} {mult:>6.2f}x {post:>10.4f}")
+
 # ── 5. Simulation + report ────────────────────────────────────────────────────
 p("\n[5/5] MONTE CARLO SIMULATION — 5,000 RUNS")
 p("=" * 78)

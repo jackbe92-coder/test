@@ -1256,18 +1256,32 @@ def compute_days_since_last_win(
 def compute_last_win_venue_match(
     runner: Runner, stride_profiles: pd.DataFrame, track: str
 ) -> Tuple[float, List[str]]:
-    """#25 — Boolean: did horse's most recent win come at today's venue?"""
+    """#25 — Boolean: did horse's most recent win come at today's venue?
+
+    Returns 1.0 only if Last_Win_Venue matches and the horse has at least one
+    confirmed win at this venue ({Track}_Wins > 0). This cross-validation prevents
+    data artefacts where Last_Win_Venue is set but the venue win count is 0.
+    """
     warnings = []
     profile = _profile_row(runner, stride_profiles)
     if profile is None or 'Last_Win_Venue' not in profile.index:
         return 0.0, warnings
 
     last_venue = str(profile.get('Last_Win_Venue', '')).strip()
-    if not last_venue or last_venue in ('nan', 'None', ''):
+    if not last_venue or last_venue.lower() in ('nan', 'none', ''):
         return 0.0, warnings
 
-    match = last_venue.lower() == track.lower()
-    return 1.0 if match else 0.0, warnings
+    if last_venue.lower() != track.lower():
+        return 0.0, warnings
+
+    # Cross-validate: require at least one confirmed win at this track
+    track_wins_col = track.title() + '_Wins'
+    if track_wins_col in profile.index:
+        track_wins = int(pd.to_numeric(profile.get(track_wins_col, 0), errors='coerce') or 0)
+        if track_wins == 0:
+            return 0.0, warnings
+
+    return 1.0, warnings
 
 
 # ---------------------------------------------------------------------------

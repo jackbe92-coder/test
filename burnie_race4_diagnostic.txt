@@ -598,12 +598,12 @@ Start type: Mobile (MS) — barrier position determines early running position
                                                                                 
   Horse                      Barrier   Driver             Win %   Place %   Sim 
  ───────────────────────────────────────────────────────────────────────────────
-  La Pierre                     4      Brent Parish       49.6%     99.2%       
-  Modern Jive                   5      Gareth Rattray     42.4%     99.8%       
-  Away Game                     1      Liam Older          7.1%     16.4%      $
-  Nikita Jo                     2      Ryan Backhouse      0.4%      2.9%     $2
-  Rock Amour                    3      Charlie Castles     0.3%      3.6%     $3
-  Andaman Bay                   6      Mark Yole           0.3%     78.0%     $3
+  La Pierre                     4      Brent Parish       49.9%     99.4%       
+  Modern Jive                   5      Gareth Rattray     42.9%     99.8%       
+  Away Game                     1      Liam Older          6.5%     15.7%      $
+  Nikita Jo                     2      Ryan Backhouse      0.3%      2.4%     $3
+  Rock Amour                    3      Charlie Castles     0.2%      3.3%     $5
+  Andaman Bay                   6      Mark Yole           0.1%     79.4%     $7
                                                                                 
 
 ─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
@@ -611,12 +611,12 @@ Start type: Mobile (MS) — barrier position determines early running position
                                                                         Most Lik
   Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
  ───────────────────────────────────────────────────────────────────────────────
-  Away Game                     66%         34%           0%       0%   Leader  
+  Away Game                     65%         35%           0%       0%   Leader  
   Nikita Jo                     18%         80%           2%       0%   On Pace 
-  Rock Amour                    10%         84%           6%       0%   On Pace 
-  La Pierre                      6%         74%          20%       0%   On Pace 
-  Modern Jive                    0%         29%          67%       5%   Midfield
-  Andaman Bay                    0%         10%          61%      29%   Midfield
+  Rock Amour                    11%         84%           5%       0%   On Pace 
+  La Pierre                      6%         74%          19%       0%   On Pace 
+  Modern Jive                    0%         29%          66%       5%   Midfield
+  Andaman Bay                    0%         10%          62%      28%   Midfield
                                                                                 
 
 ──────────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────────
@@ -624,12 +624,12 @@ Start type: Mobile (MS) — barrier position determines early running position
   Conditional = wins depend on a specific race shape
   Fragile = win% collapses outside a narrow weight band
 
-  ROBUST       La Pierre                     Low-gate 38% / Mid-gate 50% / 
-High-gate 61%
-  ROBUST       Modern Jive                   Low-gate 54% / Mid-gate 42% / 
-High-gate 32%
-  CONDITIONAL  Away Game                     Low-gate 7% / Mid-gate 8% / 
-High-gate 6%
+  ROBUST       La Pierre                     Low-gate 39% / Mid-gate 48% / 
+High-gate 64%
+  ROBUST       Modern Jive                   Low-gate 52% / Mid-gate 45% / 
+High-gate 31%
+  CONDITIONAL  Away Game                     Low-gate 9% / Mid-gate 6% / 
+High-gate 5%
 
 ──────────────────────────────── 4. KEY FACTORS ────────────────────────────────
   Features ranked by discriminating power in this race:
@@ -645,10 +645,10 @@ High-gate 6%
 
 Race overview: Burnie Race 4  (2026-03-13)  |  6 runners  |  2180m  |  Start: MS
 
-STANDOUT: La Pierre (49.6% win probability, robust selection). Projects as on 
+STANDOUT: La Pierre (49.9% win probability, robust selection). Projects as on 
 pace runner at the 800m. Consistent performer across weight scenarios.
 
-MAIN DANGER: Modern Jive (42.4%). Likely to race midfield. ROBUST — genuine 
+MAIN DANGER: Modern Jive (42.9%). Likely to race midfield. ROBUST — genuine 
 threat regardless of tempo.
 
 No horses flagged as clear value at current market prices.
@@ -663,12 +663,12 @@ DETAILED 800m POSITION PROBABILITY TABLE
 ------------------------------------------------------------------------------
 Horse                    Leader   On Pace   Midfield   Back  MostLikely
 ------------------------------------------------------------------------------
-Away Game                 65.6%     34.3%       0.2%   0.0%  Leader
-Nikita Jo                 17.8%     80.4%       1.8%   0.0%  On Pace
-Rock Amour                10.3%     83.7%       6.0%   0.0%  On Pace
-La Pierre                  6.2%     73.5%      20.2%   0.1%  On Pace
-Modern Jive                0.1%     28.5%      66.6%   4.8%  Midfield
-Andaman Bay                0.0%      9.8%      61.4%  28.7%  Midfield
+Away Game                 64.6%     35.2%       0.2%   0.0%  Leader
+Nikita Jo                 18.2%     80.1%       1.7%   0.0%  On Pace
+Rock Amour                10.9%     83.6%       5.4%   0.0%  On Pace
+La Pierre                  6.2%     74.3%      19.4%   0.1%  On Pace
+Modern Jive                0.1%     28.6%      66.3%   5.0%  Midfield
+Andaman Bay                0.0%     10.0%      61.9%  28.1%  Midfield
 
 FEATURE IMPORTANCE CHART (discriminating power = std-dev across field)
 ------------------------------------------------------------------------------

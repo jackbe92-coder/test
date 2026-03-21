@@ -21,7 +21,6 @@ Burnie Race 4 — 13 Mar 2026 — 2180m
 """
 DATA  = "output/claude_data"
 RUNS  = 5000
-np.random.seed(42)
 
 out = []
 def p(*args, **kw):

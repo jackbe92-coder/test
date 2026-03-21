@@ -60,7 +60,8 @@ def assign_pace_positions(pace_scores: Dict[str, float], track: str) -> Dict[str
     if field_std < 1e-6:
         field_std = 1.0
 
-    on_pace_gap  = PACE_GAP_ON_PACE_STDEV  * field_std
+    on_pace_stdev = profile.get('pace_gap_on_pace_stdev', PACE_GAP_ON_PACE_STDEV)
+    on_pace_gap  = on_pace_stdev           * field_std
     midfield_gap = PACE_GAP_MIDFIELD_STDEV * field_std
 
     # Top horse + any horse within on_pace_gap compete for the single lead slot

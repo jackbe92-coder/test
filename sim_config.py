@@ -238,6 +238,9 @@ TRACK_PROFILES = {
         # Cap back-marker pre-multiplier score to field average before applying 0.05x.
         # Prevents dominant class scores from overriding track reality at a 607m circuit.
         'cap_back_score': True,
+        # Tighter on-pace threshold: at 607m horses bunch early, gap between
+        # leader and 2nd is small. Override global 1.5× with 1.0×.
+        'pace_gap_on_pace_stdev': 1.8,
         'gate_speed_weight_boost':    0.5,
         'barrier_weight_boost':       0.4,
         'finishing_weight_penalty':  -0.3,

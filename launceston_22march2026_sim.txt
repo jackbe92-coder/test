@@ -1,0 +1,1073 @@
+==============================================================================
+  LAUNCESTON HARNESS — 22 MARCH 2026 — ALL 9 RACES
+==============================================================================
+  [LNCT] Track profile UNVALIDATED — outputs carry lower confidence than Burnie
+  Simulation: 2,000 Monte Carlo runs per race
+
+Loading historical data ...
+  stride_results  : 251 rows
+  stride_profiles : 17 rows
+  drivers_profile : 13 rows
+
+==============================================================================
+  [LNCT] RACE 1  —  ABBREVIATED
+==============================================================================
+Race    : 1  |  2200m  |  MS  |  9 runners
+Data coverage: 0/9 horses (0%)  — confidence: VERY LOW
+  !! Results dominated by barrier/NR priors — treat win% as illustrative only
+
+Data warnings:
+  ! Wavethebill: not found in stride_results — no gate speed data
+  ! Wavethebill: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Dylan Ford': no results found in any dataset
+  ! Rockandahardplace: not found in stride_results — no gate speed data
+  ! Rockandahardplace: not found in stride_profiles — possible mainland visitor
+  ! Driver 'John Walters': no results found in any dataset
+  ! Enjoy Life: not found in stride_results — no gate speed data
+  ! Enjoy Life: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Ricky Duggan': no results found in any dataset
+  ! Driver 'Grace Jones': no results found in any dataset
+  ! Driver 'Tiarna Ford': no results found in any dataset
+  ! Magic Joe: not found in stride_results — no gate speed data
+  ! Magic Joe: not found in stride_profiles — possible mainland visitor
+  ! Lynryd Skynryd: not found in stride_results — no gate speed data
+  ! Lynryd Skynryd: not found in stride_profiles — possible mainland visitor
+  ! Another Nien: not found in stride_results — no gate speed data
+  ! Another Nien: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Jacob Duggan': no results found in any dataset
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R1  (2200m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────────── 1. PROBABILITY TABLE ─────────────────────────────
+                                                                                
+  Horse                      Barrier   Driver             Win %   Place %   Sim 
+ ───────────────────────────────────────────────────────────────────────────────
+  Enjoy Life                    3      Mark Yole          76.8%     99.9%       
+  Magic Joe                     7      Todd Rattray       21.1%     98.8%       
+  Lynryd Skynryd                8      Gareth Rattray      2.1%     90.9%      $
+  Wavethebill                   1      Dylan Ford          0.1%      6.3%    $20
+  Zara Tindall                  5      Grace Jones         0.1%      1.4%    $20
+  Rockandahardplace             2      John Walters        0.0%      2.6%       
+  My Way                        4      Ricky Duggan        0.0%      0.0%       
+  Mr Bondi                      6      Tiarna Ford         0.0%      0.1%       
+  Another Nien                  9      Jacob Duggan        0.0%      0.1%       
+                                                                                
+
+─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
+                                                                                
+                                                                        Most Lik
+  Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
+ ───────────────────────────────────────────────────────────────────────────────
+  Wavethebill                   39%         61%           0%       0%   On Pace 
+  Rockandahardplace             28%         71%           0%       0%   On Pace 
+  Enjoy Life                    20%         80%           1%       0%   On Pace 
+  Magic Joe                      7%         77%          16%       0%   On Pace 
+  Lynryd Skynryd                 4%         72%          24%       0%   On Pace 
+  Another Nien                   2%         62%          36%       0%   On Pace 
+  My Way                         0%          0%          93%       7%   Midfield
+  Zara Tindall                   0%          0%          99%       1%   Midfield
+  Mr Bondi                       0%          0%          95%       5%   Midfield
+                                                                                
+──────────────────────────────────────────────────────────────────────────────
+
+
+==============================================================================
+  [LNCT] RACE 2  —  ABBREVIATED
+==============================================================================
+Race    : 2  |  1680m  |  MS  |  11 runners
+Data coverage: 0/11 horses (0%)  — confidence: VERY LOW
+  !! Results dominated by barrier/NR priors — treat win% as illustrative only
+
+Data warnings:
+  ! Fancy Another: not found in stride_results — no gate speed data
+  ! Fancy Another: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Ricky Duggan': no results found in any dataset
+  ! Harley Glenwood: not found in stride_results — no gate speed data
+  ! Harley Glenwood: not found in stride_profiles — possible mainland visitor
+  ! Driver 'John Walters': no results found in any dataset
+  ! Voodoo Ranger: not found in stride_results — no gate speed data
+  ! Voodoo Ranger: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Jordan Chibnall': no results found in any dataset
+  ! Winning Brew: not found in stride_results — no gate speed data
+  ! Winning Brew: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Kayleb Williams': no results found in any dataset
+  ! Quay: not found in stride_results — no gate speed data
+  ! Quay: not found in stride_profiles — possible mainland visitor
+  ! Left One Hangin: not found in stride_results — no gate speed data
+  ! Left One Hangin: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Rohan Hillier': no results found in any dataset
+  ! King Bart: not found in stride_results — no gate speed data
+  ! King Bart: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Brodie Davis': no results found in any dataset
+  ! Hes First Class: not found in stride_results — no gate speed data
+  ! Hes First Class: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Dylan Ford': no results found in any dataset
+  ! Only Glory: not found in stride_results — no gate speed data
+  ! Only Glory: not found in stride_profiles — possible mainland visitor
+  ! Klitschko Leis: not found in stride_results — no gate speed data
+  ! Klitschko Leis: not found in stride_profiles — possible mainland visitor
+  ! Alby Priddy: not found in stride_results — no gate speed data
+  ! Alby Priddy: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Malcom Jones': no results found in any dataset
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R2  (1680m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────────── 1. PROBABILITY TABLE ─────────────────────────────
+                                                                                
+  Horse                      Barrier   Driver             Win %   Place %   Sim 
+ ───────────────────────────────────────────────────────────────────────────────
+  Quay                          5      Todd Rattray       58.8%     99.6%       
+  Only Glory                    9      Charlie Castles    40.2%     98.9%       
+  Klitschko Leis               10      Gareth Rattray      0.9%     83.6%     $1
+  Fancy Another                 1      Ricky Duggan        0.1%      7.4%    $10
+  Harley Glenwood               2      John Walters        0.0%      4.8%       
+  Voodoo Ranger                 3      Jordan Chibnall     0.0%      2.6%       
+  Winning Brew                  4      Kayleb Williams     0.0%      1.6%       
+  Left One Hangin               6      Rohan Hillier       0.0%      0.8%       
+  King Bart                     7      Brodie Davis        0.0%      0.4%       
+  Hes First Class               8      Dylan Ford          0.0%      0.2%       
+  Alby Priddy                  11      Malcom Jones        0.0%      0.2%       
+                                                                                
+
+─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
+                                                                                
+                                                                        Most Lik
+  Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
+ ───────────────────────────────────────────────────────────────────────────────
+  Fancy Another                 37%         59%           3%       0%   On Pace 
+  Harley Glenwood               27%         66%           7%       0%   On Pace 
+  Voodoo Ranger                 16%         71%          12%       1%   On Pace 
+  Winning Brew                  10%         69%          20%       1%   On Pace 
+  Quay                           5%         60%          34%       1%   On Pace 
+  Left One Hangin                2%         39%          57%       2%   Midfield
+  King Bart                      1%         17%          79%       3%   Midfield
+  Hes First Class                1%          9%          85%       6%   Midfield
+  Only Glory                     1%          4%          83%      12%   Midfield
+  Alby Priddy                    0%          1%          41%      57%   Back    
+  Klitschko Leis                 0%          2%          68%      30%   Midfield
+                                                                                
+──────────────────────────────────────────────────────────────────────────────
+
+
+==============================================================================
+  [LNCT] RACE 3  —  FULL DIAGNOSTIC
+==============================================================================
+Race    : 3  |  1680m  |  MS  |  11 runners
+Data coverage: 1/11 horses (9%)  — confidence: VERY LOW
+  !! Results dominated by barrier/NR priors — treat win% as illustrative only
+
+Data warnings:
+  ! Paziah: not found in stride_results — no gate speed data
+  ! Paziah: not found in stride_profiles — possible mainland visitor
+  ! Dancinwivjolene: not found in stride_results — no gate speed data
+  ! Dancinwivjolene: not found in stride_profiles — possible mainland visitor
+  ! I Am Caesar: not found in stride_results — no gate speed data
+  ! I Am Caesar: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Dylan Ford': no results found in any dataset
+  ! Driver 'Ricky Duggan': no results found in any dataset
+  ! My Mate Luke: not found in stride_results — no gate speed data
+  ! My Mate Luke: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Luke Hooper': no results found in any dataset
+  ! Outback Rock: not found in stride_results — no gate speed data
+  ! Outback Rock: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Brodie Davis': no results found in any dataset
+  ! Captain Cheddar: not found in stride_results — no gate speed data
+  ! Captain Cheddar: not found in stride_profiles — possible mainland visitor
+  ! Miki Sanz: not found in stride_results — no gate speed data
+  ! Miki Sanz: not found in stride_profiles — possible mainland visitor
+  ! Driver 'John Walters': no results found in any dataset
+  ! Five Star Shark: not found in stride_results — no gate speed data
+  ! Five Star Shark: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Jacob Duggan': no results found in any dataset
+  ! Debt Till We Part: not found in stride_results — no gate speed data
+  ! Debt Till We Part: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Paul Williams': no results found in any dataset
+  ! No Nukes Skipper: not found in stride_results — no gate speed data
+  ! No Nukes Skipper: not found in stride_profiles — possible mainland visitor
+
+[TRACK PROFILE] Launceston — UNVALIDATED
+──────────────────────────────────────────────────────────────────────────────
+Circumference : 1018m  |  Straight : 220m  |  Turns radius : 95m
+Surface       : Crushed granite  |  Direction : Anti-clockwise
+Distances     : 1680m, 2200m, 2698m
+Sprint lane   : False
+Leader win %  : 12.0%  (unvalidated — treat as provisional)
+
+Position multipliers:
+  leader        : 1.00x  ██████████
+  on_pace       : 1.10x  ███████████
+  midfield      : 1.00x  ██████████
+  back          : 0.40x  ████
+
+Weight overrides vs baseline:
+  (none defined — default weights apply)
+
+Start type this race : MS
+
+[TRACK PROFILE] PRE/POST MULTIPLIER — single illustrative pass (midpoint weights)
+──────────────────────────────────────────────────────────────────────────────
+Horse                   Pre-mult Position       Mult  Post-mult
+──────────────────────────────────────────────────────────────────────────────
+Paziah                    3.5859 on_pace        1.10x     3.9445
+Dancinwivjolene           2.6254 on_pace        1.10x     2.8879
+I Am Caesar              -0.5652 leader         1.00x    -0.5652
+Away Game                -5.4401 back           0.40x    -2.1760
+My Mate Luke             -0.8972 on_pace        1.10x    -0.9870
+Outback Rock             -1.0633 on_pace        1.10x    -1.1696
+Captain Cheddar           2.8520 on_pace        1.10x     3.1372
+Miki Sanz                -0.1166 on_pace        1.10x    -0.1282
+Five Star Shark          -1.5613 on_pace        1.10x    -1.7174
+Debt Till We Part        -1.7273 on_pace        1.10x    -1.9001
+No Nukes Skipper          2.3077 on_pace        1.10x     2.5385
+
+Running 2,000 simulations ...
+──────   MONTE CARLO RACE SIMULATION — LAUNCESTON Race 3  (2,000 runs)   ───────
+
+───────────────────────────── 1. PROBABILITY TABLE ─────────────────────────────
+                                                                                
+  Horse                      Barrier   Driver             Win %   Place %   Sim 
+ ───────────────────────────────────────────────────────────────────────────────
+  Paziah                        1      Todd Rattray       56.3%     98.4%       
+  Captain Cheddar               7      Mark Yole          30.6%     94.2%       
+  Dancinwivjolene               2      Charlie Castles    12.4%     91.9%       
+  No Nukes Skipper             11      Gareth Rattray      0.7%     15.2%     $1
+  I Am Caesar                   3      Dylan Ford          0.0%      0.2%       
+  Away Game                     4      Ricky Duggan        0.0%      0.0%       
+  My Mate Luke                  5      Luke Hooper         0.0%      0.1%       
+  Outback Rock                  6      Brodie Davis        0.0%      0.1%       
+  Miki Sanz                     8      John Walters        0.0%      0.0%       
+  Five Star Shark               9      Jacob Duggan        0.0%      0.0%       
+  Debt Till We Part            10      Paul Williams       0.0%      0.0%       
+                                                                                
+
+─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
+                                                                                
+                                                                        Most Lik
+  Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
+ ───────────────────────────────────────────────────────────────────────────────
+  Paziah                        24%         76%           0%       0%   On Pace 
+  Dancinwivjolene               22%         78%           0%       0%   On Pace 
+  I Am Caesar                   18%         82%           0%       0%   On Pace 
+  My Mate Luke                  11%         86%           3%       0%   On Pace 
+  Outback Rock                   9%         86%           5%       0%   On Pace 
+  Captain Cheddar                6%         82%          12%       0%   On Pace 
+  Miki Sanz                      4%         78%          18%       0%   On Pace 
+  Five Star Shark                4%         70%          26%       0%   On Pace 
+  Debt Till We Part              2%         64%          34%       0%   On Pace 
+  No Nukes Skipper               1%         57%          41%       1%   On Pace 
+  Away Game                      0%          0%           1%      99%   Back    
+                                                                                
+
+──────────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────────
+  Robust = wins >20%+ across all weight scenarios
+  Conditional = wins depend on a specific race shape
+  Fragile = win% collapses outside a narrow weight band
+
+  ROBUST       Paziah                        Low-gate 55% / Mid-gate 56% / 
+High-gate 57%
+  ROBUST       Captain Cheddar               Low-gate 31% / Mid-gate 31% / 
+High-gate 29%
+  CONDITIONAL  Dancinwivjolene               Low-gate 13% / Mid-gate 12% / 
+High-gate 13%
+
+──────────────────────────────── 4. KEY FACTORS ────────────────────────────────
+  Features ranked by discriminating power in this race:
+
+  1. Finishing speed (last 400m)             
+██████████████████████████████████████████████████████████████████
+  2. Class level vs field                    ██████
+  3. Lane width (wide runner discount)       ██
+  4. Freshness / days since last run         ██
+  5. Barrier / draw advantage                ██
+  6. Gate speed / early position             █
+
+───────────────────────────── 5. ANALYST NARRATIVE ─────────────────────────────
+
+Race overview: Launceston Race 3  (2026-03-22)  |  11 runners  |  1680m  |  
+Start: MS
+
+STANDOUT: Paziah (56.3% win probability, robust selection). Projects as on pace 
+runner at the 800m. Consistent performer across weight scenarios.
+
+MAIN DANGER: Captain Cheddar (30.6%). Likely to race on pace. ROBUST — genuine 
+threat regardless of tempo.
+
+No horses flagged as clear value at current market prices.
+
+RACE SHAPE: Contested pace — no clear leader emerges consistently.
+
+DATA FLAGS:
+  • Dancinwivjolene: not found in stride_profiles — possible mainland visitor
+  • Debt Till We Part: not found in stride_results — no gate speed data
+  • My Mate Luke: not found in stride_profiles — possible mainland visitor
+  • I Am Caesar: not found in stride_profiles — possible mainland visitor
+  • Paziah: not found in stride_profiles — possible mainland visitor
+  • Paziah: not found in stride_results — no gate speed data
+  • No Nukes Skipper: not found in stride_results — no gate speed data
+  • Outback Rock: not found in stride_profiles — possible mainland visitor
+  • No Nukes Skipper: not found in stride_profiles — possible mainland visitor
+  • Miki Sanz: not found in stride_profiles — possible mainland visitor
+  • Captain Cheddar: not found in stride_results — no gate speed data
+  • Captain Cheddar: not found in stride_profiles — possible mainland visitor
+  • Five Star Shark: not found in stride_profiles — possible mainland visitor
+  • Dancinwivjolene: not found in stride_results — no gate speed data
+  • I Am Caesar: not found in stride_results — no gate speed data
+  • Debt Till We Part: not found in stride_profiles — possible mainland visitor
+  • Miki Sanz: not found in stride_results — no gate speed data
+  • My Mate Luke: not found in stride_results — no gate speed data
+  • Five Star Shark: not found in stride_results — no gate speed data
+  • Outback Rock: not found in stride_results — no gate speed data
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+[FORM NOTE — R3]
+  Away Game (barrier 4, Ricky Duggan): ONLY horse with real Launceston/Burnie data.
+  Won Burnie R4 (13 Mar 2026, 2180m MS) at 68% sim probability — validated.
+  Z-score distortion: scoring negatively vs 10 data-absent rivals (all features=0).
+  !! Sim result for Away Game is UNRELIABLE — manually flag as FORM PICK.
+  No Nukes Skipper NZ (barrier 11): data-limited — 210 career starts, experienced.
+  Debt Till We Part (barrier 10): 70 career starts, prolific — no Tasmanian data.
+
+==============================================================================
+  [LNCT] RACE 4  —  FULL DIAGNOSTIC
+==============================================================================
+Race    : 4  |  2698m  |  SS  |  10 runners
+Data coverage: 0/10 horses (0%)  — confidence: VERY LOW
+  !! Results dominated by barrier/NR priors — treat win% as illustrative only
+  ! STANDING START: barrier = tab number (approximation — BP column not parsed)
+
+Data warnings:
+  ! Pardoe Plugga: not found in stride_results — no gate speed data
+  ! Pardoe Plugga: not found in stride_profiles — possible mainland visitor
+  ! Told You Twice: not found in stride_results — no gate speed data
+  ! Told You Twice: not found in stride_profiles — possible mainland visitor
+  ! Montgomery Burns: not found in stride_results — no gate speed data
+  ! Montgomery Burns: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Dylan Ford': no results found in any dataset
+  ! Keayang Fitzy: not found in stride_results — no gate speed data
+  ! Keayang Fitzy: not found in stride_profiles — possible mainland visitor
+  ! Southern Luck: not found in stride_results — no gate speed data
+  ! Southern Luck: not found in stride_profiles — possible mainland visitor
+  ! Vanquish Stride: not found in stride_results — no gate speed data
+  ! Vanquish Stride: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Ricky Duggan': no results found in any dataset
+  ! Stepping Stones: not found in stride_results — no gate speed data
+  ! Stepping Stones: not found in stride_profiles — possible mainland visitor
+  ! De Goey: not found in stride_results — no gate speed data
+  ! De Goey: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Rohan Hillier': no results found in any dataset
+  ! Glenledi Elvis: not found in stride_results — no gate speed data
+  ! Glenledi Elvis: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Conor Crook': no results found in any dataset
+  ! Magnetic Terror: not found in stride_results — no gate speed data
+  ! Magnetic Terror: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Jordan Chibnall': no results found in any dataset
+
+[TRACK PROFILE] Launceston — UNVALIDATED
+──────────────────────────────────────────────────────────────────────────────
+Circumference : 1018m  |  Straight : 220m  |  Turns radius : 95m
+Surface       : Crushed granite  |  Direction : Anti-clockwise
+Distances     : 1680m, 2200m, 2698m
+Sprint lane   : False
+Leader win %  : 12.0%  (unvalidated — treat as provisional)
+
+Position multipliers:
+  leader        : 1.00x  ██████████
+  on_pace       : 1.10x  ███████████
+  midfield      : 1.00x  ██████████
+  back          : 0.40x  ████
+
+Weight overrides vs baseline:
+  (none defined — default weights apply)
+
+Start type this race : SS
+
+[TRACK PROFILE] PRE/POST MULTIPLIER — single illustrative pass (midpoint weights)
+──────────────────────────────────────────────────────────────────────────────
+Horse                   Pre-mult Position       Mult  Post-mult
+──────────────────────────────────────────────────────────────────────────────
+Pardoe Plugga             1.8709 leader         1.00x     1.8709
+Told You Twice            1.2306 on_pace        1.10x     1.3537
+Montgomery Burns         -2.1325 on_pace        1.10x    -2.3458
+Keayang Fitzy             2.2284 on_pace        1.10x     2.4513
+Southern Luck             1.3653 on_pace        1.10x     1.5018
+Vanquish Stride          -1.1879 midfield       1.00x    -1.1879
+Stepping Stones           2.3662 midfield       1.00x     2.3662
+De Goey                  -2.1172 midfield       1.00x    -2.1172
+Glenledi Elvis           -1.9137 midfield       1.00x    -1.9137
+Magnetic Terror          -1.7101 back           0.40x    -0.6841
+
+Running 2,000 simulations ...
+──────   MONTE CARLO RACE SIMULATION — LAUNCESTON Race 4  (2,000 runs)   ───────
+
+───────────────────────────── 1. PROBABILITY TABLE ─────────────────────────────
+                                                                                
+  Horse                      Barrier   Driver             Win %   Place %   Sim 
+ ───────────────────────────────────────────────────────────────────────────────
+  Stepping Stones               7      Heath Woods        35.1%     84.8%       
+  Keayang Fitzy                 4      Mark Yole          31.8%     83.2%       
+  Pardoe Plugga                 1      Charlie Castles    17.7%     68.8%       
+  Southern Luck                 5      Todd Rattray       11.2%     37.7%       
+  Told You Twice                2      Gareth Rattray      4.3%     25.3%      $
+  Montgomery Burns              3      Dylan Ford          0.0%      0.0%       
+  Vanquish Stride               6      Ricky Duggan        0.0%      0.1%       
+  De Goey                       8      Rohan Hillier       0.0%      0.0%       
+  Glenledi Elvis                9      Conor Crook         0.0%      0.1%       
+  Magnetic Terror              10      Jordan Chibnall     0.0%      0.1%       
+                                                                                
+
+─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
+                                                                                
+                                                                        Most Lik
+  Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
+ ───────────────────────────────────────────────────────────────────────────────
+  Pardoe Plugga                 37%         53%           9%       1%   On Pace 
+  Told You Twice                24%         62%          13%       1%   On Pace 
+  Montgomery Burns              15%         66%          17%       2%   On Pace 
+  Keayang Fitzy                  9%         61%          28%       2%   On Pace 
+  Southern Luck                  5%         48%          44%       3%   On Pace 
+  Vanquish Stride                4%         30%          62%       4%   Midfield
+  Stepping Stones                2%         18%          74%       6%   Midfield
+  De Goey                        2%         11%          77%      10%   Midfield
+  Glenledi Elvis                 1%          7%          68%      24%   Midfield
+  Magnetic Terror                1%          6%          50%      43%   Midfield
+                                                                                
+
+──────────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────────
+  Robust = wins >20%+ across all weight scenarios
+  Conditional = wins depend on a specific race shape
+  Fragile = win% collapses outside a narrow weight band
+
+  ROBUST       Stepping Stones               Low-gate 36% / Mid-gate 35% / 
+High-gate 34%
+  ROBUST       Keayang Fitzy                 Low-gate 31% / Mid-gate 33% / 
+High-gate 30%
+  CONDITIONAL  Pardoe Plugga                 Low-gate 17% / Mid-gate 17% / 
+High-gate 20%
+  CONDITIONAL  Southern Luck                 Low-gate 11% / Mid-gate 11% / 
+High-gate 12%
+  CONDITIONAL  Told You Twice                Low-gate 5% / Mid-gate 4% / 
+High-gate 5%
+
+──────────────────────────────── 4. KEY FACTORS ────────────────────────────────
+  Features ranked by discriminating power in this race:
+
+  1. Class level vs field                    ███████████████████████
+  2. Barrier / draw advantage                █
+  3. Driver venue record                     █
+  4. Gate speed / early position             █
+  5. Finishing speed (last 400m)             █
+  6. Form trend (improving/declining)        █
+
+───────────────────────────── 5. ANALYST NARRATIVE ─────────────────────────────
+
+Race overview: Launceston Race 4  (2026-03-22)  |  10 runners  |  2698m  |  
+Start: SS
+
+STANDOUT: Stepping Stones (35.1% win probability, robust selection). Projects as
+midfield runner at the 800m. Consistent performer across weight scenarios.
+
+MAIN DANGER: Keayang Fitzy (31.8%). Likely to race on pace. ROBUST — genuine 
+threat regardless of tempo.
+
+No horses flagged as clear value at current market prices.
+
+RACE SHAPE: Expected pace scenario: Pardoe Plugga likely to lead, with Keayang 
+Fitzy, Southern Luck, Told You Twice, Montgomery Burns on the pace.
+
+DATA FLAGS:
+  • Montgomery Burns: not found in stride_results — no gate speed data
+  • Magnetic Terror: not found in stride_results — no gate speed data
+  • De Goey: not found in stride_results — no gate speed data
+  • Glenledi Elvis: not found in stride_profiles — possible mainland visitor
+  • Pardoe Plugga: not found in stride_results — no gate speed data
+  • Magnetic Terror: not found in stride_profiles — possible mainland visitor
+  • Vanquish Stride: not found in stride_profiles — possible mainland visitor
+  • Pardoe Plugga: not found in stride_profiles — possible mainland visitor
+  • Stepping Stones: not found in stride_results — no gate speed data
+  • Southern Luck: not found in stride_results — no gate speed data
+  • Southern Luck: not found in stride_profiles — possible mainland visitor
+  • Montgomery Burns: not found in stride_profiles — possible mainland visitor
+  • Told You Twice: not found in stride_results — no gate speed data
+  • Told You Twice: not found in stride_profiles — possible mainland visitor
+  • De Goey: not found in stride_profiles — possible mainland visitor
+  • Glenledi Elvis: not found in stride_results — no gate speed data
+  • Keayang Fitzy: not found in stride_results — no gate speed data
+  • Keayang Fitzy: not found in stride_profiles — possible mainland visitor
+  • Vanquish Stride: not found in stride_results — no gate speed data
+  • Stepping Stones: not found in stride_profiles — possible mainland visitor
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+[FORM NOTE — R4]
+  Easter Cup Heat 1. No horses found in dataset — ALL results are NR/barrier priors.
+  Stepping Stones / Keayang Fitzy split (34.9% / 34.4%) reflects equal prior uncertainty.
+  Vanquish Stride NZ (barrier 6, DATA LIMITED): treat as barrier prior only.
+  Heath Woods (Stepping Stones) is a dataset driver — minor driver-quality signal only.
+
+==============================================================================
+  [LNCT] RACE 5  —  ABBREVIATED
+==============================================================================
+Race    : 5  |  2200m  |  MS  |  12 runners
+Data coverage: 0/12 horses (0%)  — confidence: VERY LOW
+  !! Results dominated by barrier/NR priors — treat win% as illustrative only
+
+Data warnings:
+  ! Rocky Stride: not found in stride_results — no gate speed data
+  ! Rocky Stride: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Brodie Davis': no results found in any dataset
+  ! Mcmayhem: not found in stride_results — no gate speed data
+  ! Mcmayhem: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Rohan Hillier': no results found in any dataset
+  ! Lougle: not found in stride_results — no gate speed data
+  ! Lougle: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Conor Crook': no results found in any dataset
+  ! Windy Hanover: not found in stride_results — no gate speed data
+  ! Windy Hanover: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Jordan Chibnall': no results found in any dataset
+  ! Neon: not found in stride_results — no gate speed data
+  ! Neon: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Ethan Arnott': no results found in any dataset
+  ! Keepers Ideal: not found in stride_results — no gate speed data
+  ! Keepers Ideal: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Malcom Jones': no results found in any dataset
+  ! National News: not found in stride_results — no gate speed data
+  ! National News: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Ricky Duggan': no results found in any dataset
+  ! Colby Sanz: not found in stride_results — no gate speed data
+  ! Colby Sanz: not found in stride_profiles — possible mainland visitor
+  ! Driver 'John Walters': no results found in any dataset
+  ! Racketeers Boy: not found in stride_results — no gate speed data
+  ! Racketeers Boy: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Dylan Ford': no results found in any dataset
+  ! Dazzle Me: not found in stride_results — no gate speed data
+  ! Dazzle Me: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Tiarna Ford': no results found in any dataset
+  ! Major Lester: not found in stride_results — no gate speed data
+  ! Major Lester: not found in stride_profiles — possible mainland visitor
+  ! Rock On Playboy: not found in stride_results — no gate speed data
+  ! Rock On Playboy: not found in stride_profiles — possible mainland visitor
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R5  (2200m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────────── 1. PROBABILITY TABLE ─────────────────────────────
+                                                                                
+  Horse                      Barrier   Driver             Win %   Place %   Sim 
+ ───────────────────────────────────────────────────────────────────────────────
+  Major Lester                 11      Gareth Rattray     51.4%     98.8%       
+  Rock On Playboy              12      Mark Yole          47.4%     99.2%       
+  Rocky Stride                  1      Brodie Davis        0.7%     34.7%     $1
+  Mcmayhem                      2      Rohan Hillier       0.3%     23.0%     $3
+  Lougle                        3      Conor Crook         0.1%     14.3%    $20
+  Windy Hanover                 4      Jordan Chibnall     0.1%     10.1%    $20
+  Neon                          5      Ethan Arnott        0.1%      5.8%    $20
+  Keepers Ideal                 6      Malcom Jones        0.1%      4.5%    $20
+  Colby Sanz                    8      John Walters        0.1%      2.9%    $20
+  National News                 7      Ricky Duggan        0.0%      2.6%       
+  Racketeers Boy                9      Dylan Ford          0.0%      1.9%       
+  Dazzle Me                    10      Tiarna Ford         0.0%      2.3%       
+                                                                                
+
+─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
+                                                                                
+                                                                        Most Lik
+  Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
+ ───────────────────────────────────────────────────────────────────────────────
+  Rocky Stride                  37%         60%           3%       0%   On Pace 
+  Mcmayhem                      24%         69%           7%       0%   On Pace 
+  Lougle                        16%         73%          11%       0%   On Pace 
+  Windy Hanover                 11%         71%          18%       1%   On Pace 
+  Neon                           6%         63%          30%       1%   On Pace 
+  Keepers Ideal                  3%         46%          49%       2%   Midfield
+  National News                  1%         26%          70%       2%   Midfield
+  Colby Sanz                     1%         14%          81%       4%   Midfield
+  Racketeers Boy                 1%          7%          84%       8%   Midfield
+  Dazzle Me                      0%          4%          79%      16%   Midfield
+  Major Lester                   0%          3%          63%      34%   Midfield
+  Rock On Playboy                0%          2%          39%      59%   Back    
+                                                                                
+──────────────────────────────────────────────────────────────────────────────
+
+
+==============================================================================
+  [LNCT] RACE 6  —  FULL DIAGNOSTIC
+==============================================================================
+Race    : 6  |  2698m  |  SS  |  10 runners
+Data coverage: 0/10 horses (0%)  — confidence: VERY LOW
+  !! Results dominated by barrier/NR priors — treat win% as illustrative only
+  ! STANDING START: barrier = tab number (approximation — BP column not parsed)
+
+Data warnings:
+  ! Fleetwood Rock: not found in stride_results — no gate speed data
+  ! Fleetwood Rock: not found in stride_profiles — possible mainland visitor
+  ! Horatius Speculo: not found in stride_results — no gate speed data
+  ! Horatius Speculo: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Dylan Ford': no results found in any dataset
+  ! Photo First: not found in stride_results — no gate speed data
+  ! Photo First: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Jacob Duggan': no results found in any dataset
+  ! Iron Clad: not found in stride_results — no gate speed data
+  ! Iron Clad: not found in stride_profiles — possible mainland visitor
+  ! Rocks Roy: not found in stride_results — no gate speed data
+  ! Rocks Roy: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Ricky Duggan': no results found in any dataset
+  ! Anything Goes: not found in stride_results — no gate speed data
+  ! Anything Goes: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Tiarna Ford': no results found in any dataset
+  ! The Shallows: not found in stride_results — no gate speed data
+  ! The Shallows: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Brodie Davis': no results found in any dataset
+  ! Gordons Bay: not found in stride_results — no gate speed data
+  ! Gordons Bay: not found in stride_profiles — possible mainland visitor
+  ! Maebee: not found in stride_results — no gate speed data
+  ! Maebee: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Conor Crook': no results found in any dataset
+  ! Triedtotellya: not found in stride_results — no gate speed data
+  ! Triedtotellya: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Rohan Hillier': no results found in any dataset
+
+[TRACK PROFILE] Launceston — UNVALIDATED
+──────────────────────────────────────────────────────────────────────────────
+Circumference : 1018m  |  Straight : 220m  |  Turns radius : 95m
+Surface       : Crushed granite  |  Direction : Anti-clockwise
+Distances     : 1680m, 2200m, 2698m
+Sprint lane   : False
+Leader win %  : 12.0%  (unvalidated — treat as provisional)
+
+Position multipliers:
+  leader        : 1.00x  ██████████
+  on_pace       : 1.10x  ███████████
+  midfield      : 1.00x  ██████████
+  back          : 0.40x  ████
+
+Weight overrides vs baseline:
+  (none defined — default weights apply)
+
+Start type this race : SS
+
+[TRACK PROFILE] PRE/POST MULTIPLIER — single illustrative pass (midpoint weights)
+──────────────────────────────────────────────────────────────────────────────
+Horse                   Pre-mult Position       Mult  Post-mult
+──────────────────────────────────────────────────────────────────────────────
+Fleetwood Rock            3.1420 on_pace        1.10x     3.4562
+Horatius Speculo         -1.3693 leader         1.00x    -1.3693
+Photo First              -1.7385 on_pace        1.10x    -1.9124
+Iron Clad                 3.9952 on_pace        1.10x     4.3947
+Rocks Roy                -0.7266 on_pace        1.10x    -0.7993
+Anything Goes            -1.6528 midfield       1.00x    -1.6528
+The Shallows             -0.8286 midfield       1.00x    -0.8286
+Gordons Bay               2.0455 midfield       1.00x     2.0455
+Maebee                   -1.6467 midfield       1.00x    -1.6467
+Triedtotellya            -1.2203 back           0.40x    -0.4881
+
+Running 2,000 simulations ...
+──────   MONTE CARLO RACE SIMULATION — LAUNCESTON Race 6  (2,000 runs)   ───────
+
+───────────────────────────── 1. PROBABILITY TABLE ─────────────────────────────
+                                                                                
+  Horse                      Barrier   Driver             Win %   Place %   Sim 
+ ───────────────────────────────────────────────────────────────────────────────
+  Iron Clad                     4      Mark Yole          75.2%    100.0%       
+  Fleetwood Rock                1      Gareth Rattray     22.8%     99.9%       
+  Gordons Bay                   8      Charlie Castles     2.0%     98.8%      $
+  Horatius Speculo              2      Dylan Ford          0.0%      0.1%       
+  Photo First                   3      Jacob Duggan        0.0%      0.1%       
+  Rocks Roy                     5      Ricky Duggan        0.0%      0.6%       
+  Anything Goes                 6      Tiarna Ford         0.0%      0.1%       
+  The Shallows                  7      Brodie Davis        0.0%      0.4%       
+  Maebee                        9      Conor Crook         0.0%      0.1%       
+  Triedtotellya                10      Rohan Hillier       0.0%      0.0%       
+                                                                                
+
+─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
+                                                                                
+                                                                        Most Lik
+  Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
+ ───────────────────────────────────────────────────────────────────────────────
+  Fleetwood Rock                35%         54%          10%       1%   On Pace 
+  Horatius Speculo              25%         61%          12%       2%   On Pace 
+  Photo First                   16%         63%          20%       2%   On Pace 
+  Iron Clad                      9%         62%          27%       2%   On Pace 
+  Rocks Roy                      6%         48%          44%       3%   On Pace 
+  Anything Goes                  4%         29%          62%       5%   Midfield
+  The Shallows                   2%         17%          75%       7%   Midfield
+  Gordons Bay                    2%         11%          75%      12%   Midfield
+  Triedtotellya                  1%          5%          48%      46%   Midfield
+  Maebee                         1%          7%          67%      24%   Midfield
+                                                                                
+
+──────────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────────
+  Robust = wins >20%+ across all weight scenarios
+  Conditional = wins depend on a specific race shape
+  Fragile = win% collapses outside a narrow weight band
+
+  ROBUST       Iron Clad                     Low-gate 78% / Mid-gate 74% / 
+High-gate 74%
+  ROBUST       Fleetwood Rock                Low-gate 21% / Mid-gate 23% / 
+High-gate 24%
+
+──────────────────────────────── 4. KEY FACTORS ────────────────────────────────
+  Features ranked by discriminating power in this race:
+
+  1. Class level vs field                    
+██████████████████████████████████████████████████
+  2. Barrier / draw advantage                █
+  3. Driver venue record                     █
+  4. Gate speed / early position             █
+  5. Finishing speed (last 400m)             █
+  6. Form trend (improving/declining)        █
+
+───────────────────────────── 5. ANALYST NARRATIVE ─────────────────────────────
+
+Race overview: Launceston Race 6  (2026-03-22)  |  10 runners  |  2698m  |  
+Start: SS
+
+STANDOUT: Iron Clad (75.2% win probability, robust selection). Projects as on 
+pace runner at the 800m. Consistent performer across weight scenarios.
+
+MAIN DANGER: Fleetwood Rock (22.8%). Likely to race on pace. ROBUST — genuine 
+threat regardless of tempo.
+
+No horses flagged as clear value at current market prices.
+
+RACE SHAPE: Expected pace scenario: Fleetwood Rock, Horatius Speculo likely to 
+lead, with Iron Clad, Photo First, Rocks Roy on the pace.
+
+DATA FLAGS:
+  • The Shallows: not found in stride_profiles — possible mainland visitor
+  • Maebee: not found in stride_results — no gate speed data
+  • Photo First: not found in stride_results — no gate speed data
+  • Rocks Roy: not found in stride_profiles — possible mainland visitor
+  • Gordons Bay: not found in stride_results — no gate speed data
+  • Iron Clad: not found in stride_results — no gate speed data
+  • Anything Goes: not found in stride_profiles — possible mainland visitor
+  • Horatius Speculo: not found in stride_profiles — possible mainland visitor
+  • Rocks Roy: not found in stride_results — no gate speed data
+  • Gordons Bay: not found in stride_profiles — possible mainland visitor
+  • Maebee: not found in stride_profiles — possible mainland visitor
+  • Iron Clad: not found in stride_profiles — possible mainland visitor
+  • Fleetwood Rock: not found in stride_profiles — possible mainland visitor
+  • Anything Goes: not found in stride_results — no gate speed data
+  • Photo First: not found in stride_profiles — possible mainland visitor
+  • Triedtotellya: not found in stride_profiles — possible mainland visitor
+  • Fleetwood Rock: not found in stride_results — no gate speed data
+  • Horatius Speculo: not found in stride_results — no gate speed data
+  • The Shallows: not found in stride_results — no gate speed data
+  • Triedtotellya: not found in stride_results — no gate speed data
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+[FORM NOTE — R6]
+  Easter Cup Heat 2. No horse stride_results found — ALL results are NR/barrier priors.
+  Triedtotellya (barrier 10, Rohan Hillier): career 18-5-25, $268k prize money.
+  Career win rate 72% (18/25) is exceptional — user flags as 'likely standout'.
+  Iron Clad (barrier 4, NR75): sim leader 76.1% reflects NR/barrier prior only.
+  Anything Goes NZ (barrier 6): DATA LIMITED — NZ form not in dataset.
+  !! Manual form pick: Triedtotellya (career record superior, self-trained driver).
+
+==============================================================================
+  [LNCT] RACE 7  —  ABBREVIATED
+==============================================================================
+Race    : 7  |  2200m  |  MS  |  13 runners
+Data coverage: 0/13 horses (0%)  — confidence: VERY LOW
+  !! Results dominated by barrier/NR priors — treat win% as illustrative only
+  ! MAINLAND VISITOR : Keayang Lexi — mainland form only, not in dataset
+
+Data warnings:
+  ! Cuzzy Junior: not found in stride_results — no gate speed data
+  ! Cuzzy Junior: not found in stride_profiles — possible mainland visitor
+  ! Our Sweet Trixie: not found in stride_results — no gate speed data
+  ! Our Sweet Trixie: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Brodie Davis': no results found in any dataset
+  ! Keayang Lexi: not found in stride_results — no gate speed data
+  ! Keayang Lexi: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Conor Crook': no results found in any dataset
+  ! Can Do Magic: not found in stride_results — no gate speed data
+  ! Can Do Magic: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Rohan Hillier': no results found in any dataset
+  ! Kostyuk Leis: not found in stride_results — no gate speed data
+  ! Kostyuk Leis: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Ethan Arnott': no results found in any dataset
+  ! Far Left Fletch: not found in stride_results — no gate speed data
+  ! Far Left Fletch: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Jordan Chibnall': no results found in any dataset
+  ! Tullah Girl: not found in stride_results — no gate speed data
+  ! Tullah Girl: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Malcom Jones': no results found in any dataset
+  ! Norbet: not found in stride_results — no gate speed data
+  ! Norbet: not found in stride_profiles — possible mainland visitor
+  ! Driver 'John Walters': no results found in any dataset
+  ! Cee Tee Chelsea: not found in stride_results — no gate speed data
+  ! Cee Tee Chelsea: not found in stride_profiles — possible mainland visitor
+  ! Ashante Queen: not found in stride_results — no gate speed data
+  ! Ashante Queen: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Grace Jones': no results found in any dataset
+  ! Angelshavtime: not found in stride_results — no gate speed data
+  ! Angelshavtime: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Ricky Duggan': no results found in any dataset
+  ! Jeremy Wells: not found in stride_results — no gate speed data
+  ! Jeremy Wells: not found in stride_profiles — possible mainland visitor
+  ! Grizzly Montana: not found in stride_results — no gate speed data
+  ! Grizzly Montana: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Dylan Ford': no results found in any dataset
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R7  (2200m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────────── 1. PROBABILITY TABLE ─────────────────────────────
+                                                                                
+  Horse                      Barrier   Driver             Win %   Place %   Sim 
+ ───────────────────────────────────────────────────────────────────────────────
+  Cuzzy Junior                  1      Todd Rattray       66.1%     99.9%       
+  Cee Tee Chelsea               9      Charlie Castles    33.5%     99.7%       
+  Jeremy Wells                 12      Gareth Rattray      0.3%     84.4%     $3
+  Keayang Lexi                  3      Conor Crook         0.1%      4.2%    $20
+  Our Sweet Trixie              2      Brodie Davis        0.0%      6.5%       
+  Can Do Magic                  4      Rohan Hillier       0.0%      1.9%       
+  Kostyuk Leis                  5      Ethan Arnott        0.0%      1.5%       
+  Far Left Fletch               6      Jordan Chibnall     0.0%      0.9%       
+  Tullah Girl                   7      Malcom Jones        0.0%      0.5%       
+  Norbet                        8      John Walters        0.0%      0.2%       
+  Ashante Queen                10      Grace Jones         0.0%      0.3%       
+  Angelshavtime                11      Ricky Duggan        0.0%      0.1%       
+  Grizzly Montana              13      Dylan Ford          0.0%      0.1%       
+                                                                                
+
+─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
+                                                                                
+                                                                        Most Lik
+  Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
+ ───────────────────────────────────────────────────────────────────────────────
+  Cuzzy Junior                  35%         61%           4%       0%   On Pace 
+  Our Sweet Trixie              24%         69%           7%       0%   On Pace 
+  Keayang Lexi                  16%         72%          11%       0%   On Pace 
+  Can Do Magic                  12%         71%          17%       1%   On Pace 
+  Kostyuk Leis                   7%         66%          26%       1%   On Pace 
+  Far Left Fletch                3%         51%          44%       1%   On Pace 
+  Tullah Girl                    2%         32%          64%       2%   Midfield
+  Norbet                         1%         17%          78%       4%   Midfield
+  Cee Tee Chelsea                0%          8%          84%       8%   Midfield
+  Ashante Queen                  0%          5%          83%      12%   Midfield
+  Grizzly Montana                0%          2%          52%      46%   Midfield
+  Angelshavtime                  0%          3%          73%      24%   Midfield
+  Jeremy Wells                   0%          2%          52%      46%   Midfield
+                                                                                
+──────────────────────────────────────────────────────────────────────────────
+
+
+==============================================================================
+  [LNCT] RACE 8  —  ABBREVIATED
+==============================================================================
+Race    : 8  |  1680m  |  MS  |  10 runners
+Data coverage: 0/10 horses (0%)  — confidence: VERY LOW
+  !! Results dominated by barrier/NR priors — treat win% as illustrative only
+  ! MAINLAND VISITOR : My Bettor Half — mainland form only, not in dataset
+
+Data warnings:
+  ! Shez All Heart: not found in stride_results — no gate speed data
+  ! Shez All Heart: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Kayleb Williams': no results found in any dataset
+  ! My Bettor Half: not found in stride_results — no gate speed data
+  ! My Bettor Half: not found in stride_profiles — possible mainland visitor
+  ! What A Woman: not found in stride_results — no gate speed data
+  ! What A Woman: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Jordan Chibnall': no results found in any dataset
+  ! Cmon Sharky: not found in stride_results — no gate speed data
+  ! Cmon Sharky: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Dylan Ford': no results found in any dataset
+  ! Rainbow Ranger: not found in stride_results — no gate speed data
+  ! Rainbow Ranger: not found in stride_profiles — possible mainland visitor
+  ! Our Willow: not found in stride_results — no gate speed data
+  ! Our Willow: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Rohan Hillier': no results found in any dataset
+  ! Iris Brown: not found in stride_results — no gate speed data
+  ! Iris Brown: not found in stride_profiles — possible mainland visitor
+  ! Centurian Miss: not found in stride_results — no gate speed data
+  ! Centurian Miss: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Brodie Davis': no results found in any dataset
+  ! Muzzame Mate: not found in stride_results — no gate speed data
+  ! Muzzame Mate: not found in stride_profiles — possible mainland visitor
+  ! Iden Regal Wave: not found in stride_results — no gate speed data
+  ! Iden Regal Wave: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Luke Hooper': no results found in any dataset
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R8  (1680m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────────── 1. PROBABILITY TABLE ─────────────────────────────
+                                                                                
+  Horse                      Barrier   Driver             Win %   Place %   Sim 
+ ───────────────────────────────────────────────────────────────────────────────
+  Rainbow Ranger                5      Todd Rattray       59.2%     99.5%       
+  Iris Brown                    7      Mark Yole          37.1%     99.6%       
+  Muzzame Mate                  9      Charlie Castles     3.5%     90.1%      $
+  Shez All Heart                1      Kayleb Williams     0.1%      4.9%    $20
+  My Bettor Half                2      —                   0.0%      2.5%       
+  What A Woman                  3      Jordan Chibnall     0.0%      1.8%       
+  Cmon Sharky                   4      Dylan Ford          0.0%      1.1%       
+  Our Willow                    6      Rohan Hillier       0.0%      0.1%       
+  Centurian Miss                8      Brodie Davis        0.0%      0.1%       
+  Iden Regal Wave              10      Luke Hooper         0.0%      0.1%       
+                                                                                
+
+─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
+                                                                                
+                                                                        Most Lik
+  Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
+ ───────────────────────────────────────────────────────────────────────────────
+  Shez All Heart                40%         56%           3%       0%   On Pace 
+  My Bettor Half                28%         65%           7%       0%   On Pace 
+  What A Woman                  16%         73%          11%       0%   On Pace 
+  Cmon Sharky                    8%         68%          23%       1%   On Pace 
+  Rainbow Ranger                 4%         50%          44%       1%   On Pace 
+  Our Willow                     2%         27%          69%       2%   Midfield
+  Centurian Miss                 1%          6%          85%       9%   Midfield
+  Iris Brown                     1%         13%          82%       4%   Midfield
+  Iden Regal Wave                0%          2%          44%      55%   Back    
+  Muzzame Mate                   0%          3%          75%      22%   Midfield
+                                                                                
+──────────────────────────────────────────────────────────────────────────────
+
+
+==============================================================================
+  [LNCT] RACE 9  —  ABBREVIATED
+==============================================================================
+Race    : 9  |  1680m  |  MS  |  12 runners
+Data coverage: 0/12 horses (0%)  — confidence: VERY LOW
+  !! Results dominated by barrier/NR priors — treat win% as illustrative only
+
+Data warnings:
+  ! Mary Mourne: not found in stride_results — no gate speed data
+  ! Mary Mourne: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Jordan Chibnall': no results found in any dataset
+  ! Coolandcollect: not found in stride_results — no gate speed data
+  ! Coolandcollect: not found in stride_profiles — possible mainland visitor
+  ! Puntarno Stride: not found in stride_results — no gate speed data
+  ! Puntarno Stride: not found in stride_profiles — possible mainland visitor
+  ! Hay Miki: not found in stride_results — no gate speed data
+  ! Hay Miki: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Grace Jones': no results found in any dataset
+  ! Moveslikealady: not found in stride_results — no gate speed data
+  ! Moveslikealady: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Rohan Hillier': no results found in any dataset
+  ! Camelot Jedimaster: not found in stride_results — no gate speed data
+  ! Camelot Jedimaster: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Tiarna Ford': no results found in any dataset
+  ! Stir Me Up: not found in stride_results — no gate speed data
+  ! Stir Me Up: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Jacob Duggan': no results found in any dataset
+  ! Likeable Rogue: not found in stride_results — no gate speed data
+  ! Likeable Rogue: not found in stride_profiles — possible mainland visitor
+  ! Can Feel The Fury: not found in stride_results — no gate speed data
+  ! Can Feel The Fury: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Ricky Duggan': no results found in any dataset
+  ! Rollwitharty: not found in stride_results — no gate speed data
+  ! Rollwitharty: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Dylan Ford': no results found in any dataset
+  ! Tambros Tilly: not found in stride_results — no gate speed data
+  ! Tambros Tilly: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Brodie Davis': no results found in any dataset
+  ! Sokys Line: not found in stride_results — no gate speed data
+  ! Sokys Line: not found in stride_profiles — possible mainland visitor
+  ! Driver 'Kayleb Williams': no results found in any dataset
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R9  (1680m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────────── 1. PROBABILITY TABLE ─────────────────────────────
+                                                                                
+  Horse                      Barrier   Driver             Win %   Place %   Sim 
+ ───────────────────────────────────────────────────────────────────────────────
+  Puntarno Stride               3      Mark Yole          72.6%    100.0%       
+  Coolandcollect                2      Gareth Rattray     14.5%     99.9%       
+  Likeable Rogue                8      Todd Rattray       12.9%     98.8%       
+  Mary Mourne                   1      Jordan Chibnall     0.0%      0.7%       
+  Hay Miki                      4      Grace Jones         0.0%      0.3%       
+  Moveslikealady                5      Rohan Hillier       0.0%      0.2%       
+  Camelot Jedimaster            6      Tiarna Ford         0.0%      0.0%       
+  Stir Me Up                    7      Jacob Duggan        0.0%      0.0%       
+  Can Feel The Fury             9      Ricky Duggan        0.0%      0.1%       
+  Rollwitharty                 10      Dylan Ford          0.0%      0.1%       
+  Tambros Tilly                11      Brodie Davis        0.0%      0.1%       
+  Sokys Line                   12      Kayleb Williams     0.0%      0.1%       
+                                                                                
+
+─────────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────────
+                                                                                
+                                                                        Most Lik
+  Horse                      Lead %   On Pace %   Midfield %   Back %   Spot    
+ ───────────────────────────────────────────────────────────────────────────────
+  Mary Mourne                   36%         60%           3%       0%   On Pace 
+  Coolandcollect                25%         70%           5%       0%   On Pace 
+  Puntarno Stride               17%         72%          11%       0%   On Pace 
+  Hay Miki                      11%         72%          17%       0%   On Pace 
+  Moveslikealady                 6%         63%          30%       1%   On Pace 
+  Camelot Jedimaster             2%         47%          49%       1%   Midfield
+  Stir Me Up                     1%         24%          72%       2%   Midfield
+  Likeable Rogue                 1%         14%          81%       4%   Midfield
+  Can Feel The Fury              0%          8%          84%       8%   Midfield
+  Rollwitharty                   0%          3%          81%      16%   Midfield
+  Tambros Tilly                  0%          3%          64%      33%   Midfield
+  Sokys Line                     0%          1%          36%      63%   Back    
+                                                                                
+──────────────────────────────────────────────────────────────────────────────
+
+
+
+==============================================================================
+  RACE NIGHT SUMMARY — LAUNCESTON 22 MARCH 2026
+==============================================================================
+  [LNCT] UNVALIDATED TRACK — treat all outputs as directional, not definitive
+  No SP data available — implied odds computed from sim win%; compare vs TAB
+
+  Confidence legend: PRIOR=barrier/NR priors only | LOW=1-2 horses w/data | MOD=partial data
+
+R    Dist ST  Conf       Sim Pick (!)            Win% Main Danger            Dngr%
+──────────────────────────────────────────────────────────────────────────────
+R1    2200m MS   0/9 VERY LOW  Enjoy Life             76.8%  Magic Joe              21.1%
+R2    1680m MS   0/11 VERY LOW  Quay                   58.8%  Only Glory             40.2%
+R3 *  1680m MS   1/11 VERY LOW  Paziah                 56.3%  Captain Cheddar        30.6%
+R4 *  2698m SS   0/10 VERY LOW  Stepping Stones        35.1%  Keayang Fitzy          31.8%
+R5    2200m MS   0/12 VERY LOW  Major Lester           51.4%  Rock On Playboy        47.4%
+R6 *  2698m SS   0/10 VERY LOW  Iron Clad              75.2%  Fleetwood Rock         22.8%
+R7    2200m MS   0/13 VERY LOW  Cuzzy Junior           66.1%  Cee Tee Chelsea        33.5%
+R8    1680m MS   0/10 VERY LOW  Rainbow Ranger         59.2%  Iris Brown             37.1%
+R9    1680m MS   0/12 VERY LOW  Puntarno Stride        72.6%  Coolandcollect         14.5%
+
+  * = Priority race (full diagnostic)  | (!) = sim pick, NOT a manual form recommendation
+
+VALUE / MANUAL FLAGS (where sim is overridden by form knowledge):
+  R3: Away Game (barrier 4) — MANUAL FORM PICK. Only real-data horse in field.
+       Sim shows Paziah leading (barrier prior). Away Game won Burnie R4 9 days ago.
+  R6: Triedtotellya (barrier 10) — MANUAL FORM PICK. Career 18-5-25 (72% win rate).
+       Sim shows Iron Clad (NR/barrier prior). Triedtotellya is self-trained standout.
+
+NOTES PER RACE:
+  R3: Priority race — pre/post multiplier table included above
+  R4: Standing start — barrier approx (tab used as proxy for BP) | Priority race — pre/post multiplier table included above
+  R6: Standing start — barrier approx (tab used as proxy for BP) | Priority race — pre/post multiplier table included above
+  R7: ! MAINLAND VISITOR : Keayang Lexi — mainland form only, not in dataset
+  R8: ! MAINLAND VISITOR : My Bettor Half — mainland form only, not in dataset
+
+==============================================================================
+  END OF SIMULATION — LAUNCESTON 22 MARCH 2026
+  Track profile: Launceston (unvalidated)  |  2,000 runs per race
+==============================================================================

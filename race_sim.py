@@ -15,6 +15,7 @@ CLI Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 # Force UTF-8 output on Windows (avoids cp1252 UnicodeEncodeError)
@@ -33,7 +34,7 @@ from report_generator import generate_report
 from track_profiles import apply_track_profile
 from sim_config import (
     WEIGHT_RANGES, TRACK_OVERRIDES, STANDING_START_BARRIER_ADJUSTMENT,
-    DEFAULT_RUNS, PACE_GAP_LEADER, PACE_GAP_ON_PACE, PACE_GAP_MIDFIELD,
+    DEFAULT_RUNS, PACE_GAP_ON_PACE_STDEV, PACE_GAP_MIDFIELD_STDEV,
     FIELD_STRENGTH_BASELINE,
 )
 
@@ -268,14 +269,13 @@ def run_single(
     return finish_order, pace_order, pace_positions
 
 
-def assign_pace_bucket(rank: int, n_runners: int, leader_score: float, my_score: float) -> str:
-    """Classify pace position based on z-score gap from leader."""
+def assign_pace_bucket(rank: int, n_runners: int, leader_score: float, my_score: float,
+                       field_std: float = 1.0) -> str:
+    """Classify pace position based on relative gap from leader (stdev-scaled)."""
     gap = leader_score - my_score
-    if gap <= PACE_GAP_LEADER:
-        return 'leader'
-    elif gap <= PACE_GAP_ON_PACE:
+    if gap <= PACE_GAP_ON_PACE_STDEV * field_std:
         return 'on_pace'
-    elif gap <= PACE_GAP_MIDFIELD:
+    elif gap <= PACE_GAP_MIDFIELD_STDEV * field_std:
         return 'midfield'
     else:
         return 'back'
@@ -393,8 +393,14 @@ def main():
         description='Monte Carlo Race Simulation Engine — Tasmanian Harness Racing'
     )
     parser.add_argument(
-        '--form', required=True,
-        help='Path to PDF race form guide (e.g. "Hobart Harness 15-03-2026.pdf")'
+        '--form', default=None,
+        help=(
+            'Form input — one of:\n'
+            '  PDF file path:  "Hobart Harness 15-03-2026.pdf"\n'
+            '  Text file path: "race.txt"  (any non-.pdf file is read as pasted text)\n'
+            '  Stdin:          "-"  (pipe or redirect: echo "..." | python race_sim.py --form -)\n'
+            'Omit entirely to read pasted text from stdin interactively.'
+        )
     )
     parser.add_argument(
         '--data', default='output/claude_data',
@@ -410,15 +416,47 @@ def main():
     )
     parser.add_argument(
         '--race', type=int, default=0,
-        help='Race number to simulate (e.g. --race 3). Omit to list all races in the PDF.'
+        help='Race number to simulate from a PDF (e.g. --race 3). Omit to list all races.'
+    )
+    parser.add_argument(
+        '--start', choices=['MS', 'SS'],
+        help='Override start type: MS = mobile, SS = standing'
     )
     args = parser.parse_args()
 
-    # 1. Parse form
-    print(f"\n[race_sim] Parsing form: {args.form!r}")
+    # 1. Resolve form input → string passed to parse_form
+    #
+    #   --form foo.pdf        → PDF path (unchanged)
+    #   --form foo.txt        → read file, pass text content
+    #   --form -              → read stdin, pass text content
+    #   --form omitted        → read stdin interactively, pass text content
+    #   --form "1. Horse ..." → inline text (no file, not .pdf)
+
+    form_arg = args.form
+
+    if form_arg is None or form_arg == '-':
+        # Read from stdin
+        if form_arg is None and sys.stdin.isatty():
+            print("[race_sim] No --form given. Paste race field below, then press Ctrl-D (EOF):\n")
+        form_str = sys.stdin.read()
+        label = '<stdin>'
+    elif form_arg.lower().endswith('.pdf'):
+        form_str = form_arg          # parse_form handles PDF path directly
+        label = form_arg
+    elif os.path.isfile(form_arg):
+        # Text file — read its contents
+        with open(form_arg, encoding='utf-8', errors='replace') as fh:
+            form_str = fh.read()
+        label = form_arg
+    else:
+        # Treat as inline pasted text
+        form_str = form_arg
+        label = '<inline text>'
+
+    print(f"\n[race_sim] Parsing form: {label!r}")
     try:
         race_info = parse_form(
-            form_str=args.form,
+            form_str=form_str,
             data_dir=args.data,
             track_override=args.track,
             race_no=args.race,
@@ -426,6 +464,10 @@ def main():
     except Exception as e:
         print(f"[ERROR] Could not parse form: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # Apply start-type override after parsing
+    if args.start:
+        race_info.start_type = args.start
 
     if not race_info.runners:
         print("[ERROR] No runners found in form input.", file=sys.stderr)

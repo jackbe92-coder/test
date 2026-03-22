@@ -2700,6 +2700,17 @@ def fetch_stride_horses(horses_file: str, out_dir: str,
                     if profile or runs:
                         display = display_fb
 
+            # If still no data, try appending NZ suffix (handles slugs scraped from
+            # sectionals ALL-CAPS format that stripped the country suffix, e.g.
+            # 'imperial-laz' should resolve as 'Imperial Laz NZ').
+            if not profile and not runs and not slug.endswith('-nz'):
+                display_nz = display + ' NZ'
+                profile, runs = _fetch_stride_horse(display_nz, since_date=since)
+                if profile or runs:
+                    display = display_nz
+                    slug = slug + '-nz'
+                    print(f"  [{i:>3}/{total}] NZ suffix resolved: {slug}")
+
             if not profile and not runs:
                 print(f"  [{i:>3}/{total}] {slug:45s} ✗ no data")
                 skipped_nodata += 1

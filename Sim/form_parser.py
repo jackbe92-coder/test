@@ -39,9 +39,20 @@ class Runner:
     barrier: int
     driver: str = ""
     trainer: str = ""
-    nr: float = 0.0        # National Rating (if known)
+    nr: float = 0.0         # Operative NR (adjusted if A-value present, else raw)
+    nr_raw: float = 0.0     # Original NR before adjustment
+    nr_adjusted: float = 0.0  # Adjusted NR (A-value) if present, else 0.0
     tab_no: int = 0
-    sp: float = 0.0        # Market SP (if known, e.g. from historical lookup)
+    sp: float = 0.0         # Market SP (if known)
+    form_string: str = ""   # Recent form digits e.g. "78768"
+    barrier_row: str = ""   # "FR" or "SR"
+    handicap_m: int = 0     # Standing start handicap in metres (0, 10, or 20)
+    is_front_tape: bool = False  # True if HCP == "FT"
+    gear_changes: List[str] = field(default_factory=list)  # ["Blinkers Hood ON", ...]
+    odm_mobile: bool = False    # Out of draw in mobile starts
+    odm_standing: bool = False  # Out of draw in standing starts
+    is_conditional: bool = False  # Driver has (C) or (C,5) suffix
+    scratched: bool = False     # Horse is withdrawn
 
 
 @dataclass
@@ -52,7 +63,8 @@ class RaceInfo:
     distance_m: int = 0
     start_type: str = "MS"  # "MS" mobile, "SS" standing
     nr_conditions: str = ""
-    runners: List[Runner] = field(default_factory=list)
+    runners: List[Runner] = field(default_factory=list)       # Active (non-scratched) runners
+    all_runners: List[Runner] = field(default_factory=list)   # All runners including scratched
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +177,411 @@ def extract_track(s: str) -> Optional[str]:
         if re.search(r'\b' + re.escape(key) + r'\b', s.lower()):
             return normalised
     return None
+
+
+# ---------------------------------------------------------------------------
+# Fields document helpers
+# ---------------------------------------------------------------------------
+
+def _is_fields_doc(text: str) -> bool:
+    """Detect harness.au fields document format."""
+    return bool(
+        re.search(r'^R\d+\s+\d{2}:\d{2}\s+(am|pm)', text, re.MULTILINE | re.IGNORECASE)
+        or 'NO. FORM NAME TRAINER DRIVER' in text
+    )
+
+
+def _split_trainer_driver(tokens: list[str]) -> tuple[str, str, bool]:
+    """
+    Split a token list into (trainer, driver, is_conditional).
+
+    Rule: trainer = leading single-letter initials + one surname token.
+          driver  = remaining tokens (first multi-letter first name onward).
+
+    Example: ['W', 'J', 'Yole', 'Dylan', 'Ford'] → ('W J Yole', 'Dylan Ford', False)
+    Example: ['C', 'V', 'Castles', 'Charlie', 'Castles'] → ('C V Castles', 'Charlie Castles', False)
+    Example: ['A', 'C', 'Duggan', 'Jacob', 'Duggan', '(C)'] → ('A C Duggan', 'Jacob Duggan', True)
+    """
+    is_conditional = False
+
+    # Strip (C) / (C,5) tokens and set flag
+    clean = []
+    for t in tokens:
+        if re.match(r'^\(C(?:,\d+)?\)$', t, re.IGNORECASE):
+            is_conditional = True
+        else:
+            clean.append(t)
+
+    # Find split point: scan until we hit a multi-letter token that is NOT the
+    # trainer surname (i.e. it follows at least one single-letter initial).
+    # The trainer block is: [initials...] [Surname]
+    # After the surname, the next token begins the driver name.
+    split_idx = len(clean)  # default: all tokens = trainer, no driver
+    seen_initial = False
+    seen_surname = False
+    for i, tok in enumerate(clean):
+        is_single = len(tok) == 1 and tok.isupper()
+        if is_single:
+            seen_initial = True
+        elif seen_initial and not seen_surname:
+            # First multi-letter token after initials = trainer surname
+            seen_surname = True
+        elif seen_surname:
+            # First token after trainer surname = start of driver name
+            split_idx = i
+            break
+
+    trainer = ' '.join(clean[:split_idx])
+    driver  = ' '.join(clean[split_idx:])
+    return trainer, driver, is_conditional
+
+
+def derive_barrier(hcp_str: str, tab_no: int) -> int:
+    """Derive numeric barrier from HCP column value.
+
+    FR1 → 1, FR7 → 7, SR1 → 10, SR2 → 11, FT/10/20 → tab_no, SCR → 0.
+    """
+    hcp = hcp_str.strip().upper()
+    if hcp == 'SCR':
+        return 0
+    m = re.match(r'FR(\d+)', hcp)
+    if m:
+        return int(m.group(1))
+    m = re.match(r'SR(\d+)', hcp)
+    if m:
+        return 9 + int(m.group(1))
+    if hcp in ('FT', '10', '20'):
+        return tab_no
+    return tab_no
+
+
+def parse_nr_fields_doc(class_str: str) -> tuple[float, float, float]:
+    """Parse CLASS column from fields document.
+
+    Returns (operative_nr, raw_nr, adjusted_nr).
+    Examples:
+      "NR61"       → (61.0, 61.0, 0.0)
+      "NR61 (A70)" → (70.0, 61.0, 70.0)
+    """
+    class_str = str(class_str).strip()
+    raw_nr = 0.0
+    adj_nr = 0.0
+    m = re.search(r'NR(\d+)', class_str, re.IGNORECASE)
+    if m:
+        raw_nr = float(m.group(1))
+    m = re.search(r'\(A(\d+)\)', class_str, re.IGNORECASE)
+    if m:
+        adj_nr = float(m.group(1))
+    operative = adj_nr if adj_nr > 0 else raw_nr
+    return operative, raw_nr, adj_nr
+
+
+def parse_fields_race_header(line: str) -> Optional[dict]:
+    """Parse a race header line from the fields document.
+
+    Input:  "R1 05:07 pm NR 70 to 79. PBD/NR. Pacers, Total Prizemoney: $9,700.00, Mobile Start The Bottle O Hadspen Pace 2200m"
+    Output: dict with race_no, distance_m, start_type, nr_conditions, prizemoney.
+    """
+    if not re.match(r'^R\d+\s', line):
+        return None
+    result = {}
+    m = re.match(r'^R(\d+)', line)
+    if m:
+        result['race_no'] = int(m.group(1))
+    m = re.search(r'(\d{3,5})m\s*$', line)
+    if m:
+        result['distance_m'] = int(m.group(1))
+    if re.search(r'Mobile Start', line, re.IGNORECASE):
+        result['start_type'] = 'MS'
+    elif re.search(r'Standing Start', line, re.IGNORECASE):
+        result['start_type'] = 'SS'
+    else:
+        result['start_type'] = 'MS'
+    m = re.search(r'(NR[^.]+|MAIDEN|\d+YO[^.]*)', line)
+    if m:
+        result['nr_conditions'] = m.group(1).strip()
+    m = re.search(r'\$([\d,]+\.?\d*)', line)
+    if m:
+        result['prizemoney'] = float(m.group(1).replace(',', ''))
+    return result
+
+
+def _find_trainer_start(tokens: list[str]) -> int:
+    """Find the index where trainer initials begin in a token list.
+
+    Trainer block starts at 2+ consecutive single uppercase letter tokens.
+    Returns index of the first such letter, or len(tokens) if not found.
+    """
+    for i in range(len(tokens) - 1):
+        if len(tokens[i]) == 1 and tokens[i].isupper():
+            if len(tokens[i + 1]) == 1 and tokens[i + 1].isupper():
+                return i
+    return len(tokens)
+
+
+def parse_fields_runner_line(line: str) -> Optional[dict]:
+    """Parse a single runner line from the fields document.
+
+    Works right-to-left: odds, barrier code, NR class, then splits
+    the left side into form string, horse name, trainer, and driver.
+    """
+    line = line.strip()
+    if not line:
+        return None
+
+    # Must start with a 1-2 digit tab number
+    tab_m = re.match(r'^(\d{1,2})\s+', line)
+    if not tab_m:
+        return None
+    tab_no = int(tab_m.group(1))
+    if tab_no < 1 or tab_no > 20:
+        return None
+    rest = line[tab_m.end():]
+
+    # --- Scratched runner ---
+    scr_m = re.search(r'\bSCRATCHED\b', rest)
+    if scr_m:
+        after_scr = rest[scr_m.end():].strip()
+        before_scr = rest[:scr_m.start()].strip()
+
+        operative, raw_nr, adj_nr = parse_nr_fields_doc(after_scr)
+
+        tokens = before_scr.split()
+        form_string = tokens[0] if tokens else ""
+        remaining = tokens[1:] if len(tokens) > 1 else []
+
+        # Strip ODM/ODS/RODS flags
+        odm_mobile = odm_standing = False
+        clean = []
+        for t in remaining:
+            if t.upper() == 'ODM':
+                odm_mobile = True
+            elif t.upper() in ('ODS', 'RODS'):
+                odm_standing = True
+            else:
+                clean.append(t)
+
+        trainer_idx = _find_trainer_start(clean)
+        horse = ' '.join(clean[:trainer_idx])
+        trainer = ' '.join(clean[trainer_idx:])
+
+        return {
+            'tab_no': tab_no, 'form_string': form_string,
+            'horse': horse, 'trainer': trainer, 'driver': '',
+            'nr': operative, 'nr_raw': raw_nr, 'nr_adjusted': adj_nr,
+            'barrier': 0, 'barrier_row': '', 'handicap_m': 0,
+            'is_front_tape': False, 'odm_mobile': odm_mobile,
+            'odm_standing': odm_standing, 'is_conditional': False,
+            'sp': 0.0, 'scratched': True,
+        }
+
+    # --- Normal runner: match right-side fields ---
+    # Pattern: NR, optional (A-value), optional standing handicap, barrier code, odds
+    right_m = re.search(
+        r'(NR\d+)(?:\s+\(A(\d+)\))?\s+'
+        r'((?:FT|10|20)\s+)?'
+        r'(FR\d+|SR\d+)\s+'
+        r'(\d+\.\d+)\s*$',
+        rest,
+    )
+    if not right_m:
+        return None
+
+    nr_raw_str = right_m.group(1)
+    adj_val = right_m.group(2)
+    standing_hcp = (right_m.group(3) or '').strip()
+    barrier_code = right_m.group(4)
+    odds = float(right_m.group(5))
+
+    # NR values
+    class_str = nr_raw_str
+    if adj_val:
+        class_str += f" (A{adj_val})"
+    operative, raw_nr, adj_nr = parse_nr_fields_doc(class_str)
+
+    # Barrier
+    barrier = derive_barrier(barrier_code, tab_no)
+    barrier_row = "FR" if barrier_code.upper().startswith('FR') else (
+        "SR" if barrier_code.upper().startswith('SR') else ""
+    )
+
+    # Standing start handicap
+    is_front_tape = standing_hcp == 'FT'
+    handicap_m = int(standing_hcp) if standing_hcp and standing_hcp.isdigit() else 0
+
+    # Left side: form string, horse name, ODM flags, trainer, driver
+    left = rest[:right_m.start()].strip()
+    tokens = left.split()
+    if not tokens:
+        return None
+
+    form_string = tokens[0]
+    remaining = tokens[1:]
+
+    # Strip ODM/ODS/RODS flags
+    odm_mobile = odm_standing = False
+    clean = []
+    for t in remaining:
+        if t.upper() == 'ODM':
+            odm_mobile = True
+        elif t.upper() in ('ODS', 'RODS'):
+            odm_standing = True
+        else:
+            clean.append(t)
+
+    # Split horse name from trainer+driver
+    trainer_idx = _find_trainer_start(clean)
+    horse_tokens = clean[:trainer_idx]
+    td_tokens = clean[trainer_idx:]
+
+    horse = ' '.join(horse_tokens)
+    trainer, driver, is_conditional = _split_trainer_driver(td_tokens)
+
+    return {
+        'tab_no': tab_no, 'form_string': form_string,
+        'horse': horse, 'trainer': trainer, 'driver': driver,
+        'nr': operative, 'nr_raw': raw_nr, 'nr_adjusted': adj_nr,
+        'barrier': barrier, 'barrier_row': barrier_row,
+        'handicap_m': handicap_m, 'is_front_tape': is_front_tape,
+        'odm_mobile': odm_mobile, 'odm_standing': odm_standing,
+        'is_conditional': is_conditional, 'sp': odds, 'scratched': False,
+    }
+
+
+def _flush_fields_race(
+    races: list,
+    header: dict,
+    runners_data: list[dict],
+    track: str,
+    date_str: str,
+) -> None:
+    """Build a RaceInfo from parsed header and runner dicts, append to races."""
+    all_runners = []
+    active_runners = []
+
+    for rd in runners_data:
+        runner = Runner(
+            horse=rd['horse'],
+            slug=slugify(rd['horse']),
+            barrier=rd['barrier'],
+            driver=rd['driver'],
+            trainer=rd['trainer'],
+            nr=rd['nr'],
+            nr_raw=rd['nr_raw'],
+            nr_adjusted=rd['nr_adjusted'],
+            tab_no=rd['tab_no'],
+            sp=rd['sp'],
+            form_string=rd['form_string'],
+            barrier_row=rd['barrier_row'],
+            handicap_m=rd['handicap_m'],
+            is_front_tape=rd['is_front_tape'],
+            odm_mobile=rd['odm_mobile'],
+            odm_standing=rd['odm_standing'],
+            is_conditional=rd['is_conditional'],
+            scratched=rd['scratched'],
+        )
+        all_runners.append(runner)
+        if not rd['scratched']:
+            active_runners.append(runner)
+
+    races.append(RaceInfo(
+        track=track,
+        date=date_str,
+        race_no=header.get('race_no', 0),
+        distance_m=header.get('distance_m', 0),
+        start_type=header.get('start_type', 'MS'),
+        nr_conditions=header.get('nr_conditions', ''),
+        runners=active_runners,
+        all_runners=all_runners,
+    ))
+
+
+def parse_fields_doc(
+    text: str,
+    race_no: int = 0,
+    data_dir: str = '',
+) -> list[RaceInfo]:
+    """Parse a complete harness.au fields document.
+
+    Returns a list of RaceInfo objects for all races found.
+    Handles page break artifacts, column headers, and second-row separators.
+    """
+    lines = text.splitlines()
+
+    clean_lines: list[str] = []
+    date_str = ""
+    track = ""
+
+    for raw_line in lines:
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+
+        # Extract date from "As at:" lines, then skip
+        if stripped.startswith('As at:'):
+            if not date_str:
+                d = parse_date(stripped)
+                if d:
+                    date_str = d
+            continue
+
+        # Skip column header
+        if 'NO. FORM NAME TRAINER DRIVER' in stripped:
+            continue
+
+        # Skip second-row separator
+        if re.match(r'^-+SECOND ROW-+$', stripped):
+            continue
+
+        # Handle page-break lines ("*Odds... Page X of Y<runner data>")
+        if 'Page' in stripped and re.search(r'Page\s+\d+\s+of\s+\d', stripped):
+            m = re.search(r'Page\s+\d+\s+of\s+\d', stripped)
+            if m:
+                after = stripped[m.end():].strip()
+                # Strip repeated page refs like "2 of 3"
+                after = re.sub(r'^\d+\s+of\s+\d\s*', '', after).strip()
+                if after and re.match(r'\d{1,2}\s+\S', after):
+                    clean_lines.append(after)
+            continue
+
+        # Skip standalone "*Odds" lines
+        if stripped.startswith('*Odds'):
+            continue
+
+        clean_lines.append(stripped)
+
+    # Detect track from early lines
+    if not track:
+        for cl in clean_lines[:20]:
+            t = extract_track(cl)
+            if t:
+                track = t
+                break
+
+    # Parse race headers and runner lines
+    races: list[RaceInfo] = []
+    current_header: Optional[dict] = None
+    current_runners: list[dict] = []
+
+    for cl in clean_lines:
+        header = parse_fields_race_header(cl)
+        if header:
+            if current_header and current_runners:
+                _flush_fields_race(races, current_header, current_runners, track, date_str)
+            current_header = header
+            current_runners = []
+            continue
+
+        if current_header:
+            runner_data = parse_fields_runner_line(cl)
+            if runner_data:
+                current_runners.append(runner_data)
+
+    # Flush last race
+    if current_header and current_runners:
+        _flush_fields_race(races, current_header, current_runners, track, date_str)
+
+    return races
 
 
 # ---------------------------------------------------------------------------
@@ -722,92 +1139,148 @@ def parse_pdf_form(pdf_path: str, race_no: int = 0) -> RaceInfo:
 def parse_text_form(text: str) -> RaceInfo:
     """Parse a pasted text form into a RaceInfo.
 
-    Attempts to detect:
-      - Track name and date from header lines
-      - One runner per line: tab number, horse name, barrier, driver, trainer, NR
+    Handles three input styles:
 
-    Flexible: will extract as much as it can find.
+    Style A — numbered list with explicit barrier (recommended for paste):
+        1. Away Game — barrier 1 — Liam Older — NR45
+        2. Nikita Jo — barrier 2 — Ryan Backhouse — NR50
+
+    Style B — numbered list, barrier = position (classic sim format):
+        1. Away Game  Liam Older  NR45
+        2. Nikita Jo  Ryan Backhouse  NR50
+
+    Style C — plain name list, barrier from context (no numbers needed):
+        Away Game — barrier 1
+        Nikita Jo — barrier 2
+
+    Header (any style, placed before field):
+        Burnie Race 4 — 13 Mar 2026 — 2180m — Standing start (SS)
+        Start type: SS   Distance: 2180m
+
+    Separators between fields can be " — ", ", ", " | ", or whitespace.
+    NR, Driver, and trainer are all optional.
     """
     info = RaceInfo()
     runners = []
 
     lines = [l.strip() for l in text.splitlines() if l.strip()]
 
-    # --- Header detection (first few lines) ---
-    header_text = ' '.join(lines[:5])
-    track = extract_track(header_text)
-    if track:
-        info.track = track
-    date = parse_date(header_text)
-    if date:
-        info.date = date
+    # --- Scan ALL lines for header metadata (not just first 5) ---
+    # This lets users put "Start type: SS" anywhere in their paste.
+    for line in lines:
+        tl = line.lower()
 
-    # Race number
-    m = re.search(r'[Rr]ace\s+(\d+)', header_text)
-    if m:
-        info.race_no = int(m.group(1))
+        # Track
+        if not info.track:
+            t = extract_track(line)
+            if t:
+                info.track = t
 
-    # Distance
-    m = re.search(r'(\d{3,4})\s*m\b', header_text)
-    if m:
-        info.distance_m = int(m.group(1))
+        # Date
+        if not info.date:
+            d = parse_date(line)
+            if d:
+                info.date = d
 
-    # Start type
-    if re.search(r'\bstanding\b|\bSS\b', header_text, re.IGNORECASE):
-        info.start_type = "SS"
+        # Race number
+        if not info.race_no:
+            m = re.search(r'[Rr]ace\s+(\d+)', line)
+            if m:
+                info.race_no = int(m.group(1))
 
-    # --- Runner line parsing ---
-    # Pattern: optional tab/number, horse name, barrier info, optional driver/trainer/NR
-    # Barriers in harness may be expressed as: Fr1, Fr2, Sr1, 1, 2, Barrier 3
-    runner_pattern = re.compile(
-        r'^(\d{1,2})[\.\):\s]+'                            # tab number
-        r'([A-Z][A-Za-z\s\'\-]+?)'                         # horse name (title/upper case)
-        r'(?:\s+(?:Fr|Sr|Barrier\s*)?(\d{1,2})\b)?'       # optional barrier
-        r'(?:\s+([A-Za-z][\w\s]+?))?'                      # optional driver
-        r'(?:\s*/\s*([A-Za-z][\w\s]+?))?'                  # optional trainer (after /)
-        r'(?:\s+NR\s*(\d+))?'                              # optional NR
-        r'(?:\s+\$?([\d\.]+))?$',                          # optional SP
+        # Distance
+        if not info.distance_m:
+            m = re.search(r'(\d{3,5})\s*m\b', line)
+            if m:
+                info.distance_m = int(m.group(1))
+
+        # Start type — check for SS/standing anywhere in the paste
+        if info.start_type == 'MS':
+            if re.search(r'\bstanding\s+start\b|\bSS\b|\bstart\s*type\s*[:\-–]\s*SS\b',
+                         line, re.IGNORECASE):
+                info.start_type = 'SS'
+
+    # --- Normalise delimiter: replace em-dash / pipe / semicolon with plain comma ---
+    def _norm(s: str) -> str:
+        return re.sub(r'\s*[—–|;]\s*', ', ', s).strip()
+
+    # --- Pattern A: "Horse Name — barrier N [— Driver] [— NR N] [— $SP]" ---
+    # Barrier is explicit; horse name is everything before it.
+    # Works with or without a leading tab number.
+    pat_barrier_explicit = re.compile(
+        r'^(?:(\d{1,2})[\.\):\s]+)?'                # optional tab number
+        r'([A-Za-z][A-Za-z0-9\s\'\-]+?)'            # horse name (greedy up to barrier)
+        r'[,\s]+[Bb]arrier\s+(\d{1,2})'             # "barrier N" — anchor
+        r'(?:[,\s]+([A-Za-z][A-Za-z\s\.]+?))?'      # optional driver
+        r'(?:[,\s]+NR\s*(\d+))?'                    # optional NR
+        r'(?:[,\s]+\$?([\d\.]+))?$',                # optional SP
+        re.IGNORECASE,
+    )
+
+    # --- Pattern B: numbered list where barrier = tab number ---
+    # "1. Away Game  Liam Older  NR45"
+    # Horse name ends at a recognised NR/driver-boundary token.
+    pat_numbered = re.compile(
+        r'^(\d{1,2})[\.\):\s]+'                      # tab number (required)
+        r'([A-Z][A-Za-z0-9\s\'\-]+?)'               # horse name
+        r'(?:\s+(?:Fr|Sr|Barrier\s*)?(\d{1,2})\b)?'  # optional explicit barrier
+        r'(?:\s+([A-Za-z][A-Za-z\s\.]+?))?'          # optional driver
+        r'(?:\s*/\s*([A-Za-z][A-Za-z\s\.]+?))?'      # optional trainer (after /)
+        r'(?:\s+NR\s*(\d+))?'                        # optional NR
+        r'(?:\s+\$?([\d\.]+))?$',
         re.IGNORECASE,
     )
 
     for line in lines:
-        m = runner_pattern.match(line)
+        # Skip obvious header/metadata lines
+        if re.match(r'^(track|date|race|distance|start|field|actual|result|[0-9]+st|[0-9]+nd|[0-9]+rd|[0-9]+th)\b',
+                    line, re.IGNORECASE):
+            continue
+
+        normed = _norm(line)
+
+        # Try Pattern A first (explicit "barrier N" anchor is unambiguous)
+        m = pat_barrier_explicit.match(normed)
         if m:
-            tab_no = int(m.group(1))
-            horse = m.group(2).strip().title()
-            barrier_str = m.group(3)
-            driver = (m.group(4) or '').strip()
-            trainer = (m.group(5) or '').strip()
-            nr_str = m.group(6)
-            sp_str = m.group(7)
-
-            barrier = int(barrier_str) if barrier_str else tab_no  # fallback barrier = tab
-            nr = float(nr_str) if nr_str else 0.0
-            sp = float(sp_str) if sp_str else 0.0
-
+            tab_no   = int(m.group(1)) if m.group(1) else len(runners) + 1
+            horse    = m.group(2).strip().title()
+            barrier  = int(m.group(3))
+            driver   = (m.group(4) or '').strip()
+            nr       = float(m.group(5)) if m.group(5) else 0.0
+            sp       = float(m.group(6)) if m.group(6) else 0.0
             runners.append(Runner(
-                horse=horse,
-                slug=slugify(horse),
-                barrier=barrier,
-                driver=driver,
-                trainer=trainer,
-                nr=nr,
-                tab_no=tab_no,
-                sp=sp,
+                horse=horse, slug=slugify(horse),
+                barrier=barrier, driver=driver,
+                nr=nr, sp=sp, tab_no=tab_no,
+            ))
+            continue
+
+        # Try Pattern B (numbered list)
+        m = pat_numbered.match(normed)
+        if m:
+            tab_no   = int(m.group(1))
+            horse    = m.group(2).strip().title()
+            barrier  = int(m.group(3)) if m.group(3) else tab_no
+            driver   = (m.group(4) or '').strip()
+            trainer  = (m.group(5) or '').strip()
+            nr       = float(m.group(6)) if m.group(6) else 0.0
+            sp       = float(m.group(7)) if m.group(7) else 0.0
+            runners.append(Runner(
+                horse=horse, slug=slugify(horse),
+                barrier=barrier, driver=driver, trainer=trainer,
+                nr=nr, sp=sp, tab_no=tab_no,
             ))
 
     if not runners:
-        # Last resort: pick out anything that looks like a numbered entry
+        # Last resort: any line starting with a capital and containing "barrier N"
         for line in lines:
-            m = re.match(r'^(\d{1,2})[\.\):\s]+([A-Z][A-Z\s\'\-]{2,})', line)
+            m = re.search(r'([A-Z][A-Za-z\s\'\-]+?)\s*[,—–]\s*barrier\s+(\d+)', line, re.IGNORECASE)
             if m:
-                tab_no = int(m.group(1))
-                horse = m.group(2).strip().title()
+                horse   = m.group(1).strip().title()
+                barrier = int(m.group(2))
                 runners.append(Runner(
-                    horse=horse,
-                    slug=slugify(horse),
-                    barrier=tab_no,
-                    tab_no=tab_no,
+                    horse=horse, slug=slugify(horse),
+                    barrier=barrier, tab_no=barrier,
                 ))
 
     info.runners = runners
@@ -845,6 +1318,25 @@ def parse_form(
         if track_override:
             info.track = normalise_track(track_override)
         return info
+
+    # --- Fields document (harness.au format) ---
+    if _is_fields_doc(form_str):
+        races = parse_fields_doc(form_str, race_no=race_no, data_dir=data_dir)
+        if track_override:
+            for r in races:
+                r.track = normalise_track(track_override)
+        if race_no:
+            for r in races:
+                if r.race_no == race_no:
+                    return r
+            raise ValueError(f"Race {race_no} not found in fields document")
+        # List all races and exit
+        print(f"\n[form_parser] Found {len(races)} race(s) in fields document")
+        if races:
+            print(f"              Track: {races[0].track or '(use --track)'}   Date: {races[0].date or '?'}")
+        list_races(races)
+        print("  Specify a race with --race N  (e.g. --race 3)")
+        raise SystemExit(0)
 
     # --- Free-text pasted form ---
     info = parse_text_form(form_str)

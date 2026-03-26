@@ -1,0 +1,468 @@
+"""
+agent_model.py — Agent-based segment simulation for Tasmanian harness racing.
+
+Replaces the weighted-score Monte Carlo in run_single() with a physics-driven
+three-phase simulation where finish order EMERGES from position state rather
+than from a pre-computed ranking.
+
+Phases:
+  Phase 1 (Start → 800m): Gate speed + barrier → early position + energy init
+  Phase 2 (800m → 400m):  Energy depletion, width penalty, interference, tactics
+  Phase 3 (400m → Finish): Energy-weighted sprint finish
+
+Entry point: run_single_agentbased()
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Tuple
+
+import numpy as np
+
+from sim_config import (
+    BASE_PACE_MS,
+    PHASE1_LEADER_ENERGY_COST, PHASE1_ON_PACE_ENERGY_COST,
+    PHASE1_MIDFIELD_ENERGY_COST, PHASE1_BACK_ENERGY_COST,
+    PHASE2_LEADER_ENERGY_COST, PHASE2_ON_PACE_ENERGY_COST,
+    PHASE2_MIDFIELD_ENERGY_COST, PHASE2_BACK_ENERGY_COST,
+    GATE_NOISE_STD,
+    PHASE1_GAP_PER_POSITION_M,
+    WIDTH_PENALTY_M_PER_LANE,
+    INTERFERENCE_PROB, INTERFERENCE_ENERGY_COST, INTERFERENCE_GAP_PENALTY_M,
+    TACTICAL_ENERGY_THRESHOLD, TACTICAL_MOVE_BASE_PROB, TACTICAL_GAP_GAIN_M,
+)
+
+
+# ---------------------------------------------------------------------------
+# HorseState
+# ---------------------------------------------------------------------------
+
+@dataclass
+class HorseState:
+    slug: str
+    position: int           # rank from front (1 = leader)
+    lane: int               # 1 = rail, higher = wider
+    gap_to_leader_m: float  # metres behind leader (leader = 0.0)
+    energy: float           # 1.0 = full tank; depletes through race
+    speed_m_per_s: float    # current speed
+    checked: bool           # interference flag this segment
+    finished: bool
+
+
+# ---------------------------------------------------------------------------
+# Gate clear probability (Section 3.2 of spec)
+# ---------------------------------------------------------------------------
+
+def prob_gate_clear(
+    barrier: int,
+    gate_speed_z: float,
+    run_in_metres: float,
+    n_runners: int,
+) -> float:
+    """Probability a horse clears from its barrier to rail before the first turn.
+
+    Higher run_in_metres = more time = higher probability.
+    Higher gate_speed_z  = faster jumper = higher probability.
+    Lower barrier        = less distance to clear = higher probability.
+
+    Returns a probability in [0.02, 0.95].
+    """
+    if barrier <= 1:
+        return 0.0  # Already on rail — no clear needed
+
+    lanes_to_clear = barrier - 1
+
+    # Normalise run-in: 200m = reference (full value); quadratic so short tracks drop sharply.
+    run_in_norm = min(1.0, (run_in_metres / 200.0) ** 2)
+
+    # Gate speed multiplier: z=+2 → 30% boost, z=-2 → 30% reduction
+    speed_advantage = 1.0 + gate_speed_z * 0.15
+
+    # Exponential decay with lanes to clear: each additional lane halves the base prob.
+    # Calibrated so B7 elite gate at Launceston (180m) ≈ 40-60%, Burnie (80m) ≈ 5-10%.
+    base = 1.2 * run_in_norm * speed_advantage * (0.82 ** lanes_to_clear)
+    return float(min(0.95, max(0.02, base)))
+
+
+# ---------------------------------------------------------------------------
+# Phase utilities
+# ---------------------------------------------------------------------------
+
+def _recalc_positions(states: List[HorseState]) -> None:
+    """Re-rank all states by gap_to_leader_m ascending (leader = rank 1)."""
+    for rank, s in enumerate(sorted(states, key=lambda x: x.gap_to_leader_m), 1):
+        s.position = rank
+
+
+def _position_bucket(position: int, n: int) -> str:
+    """Map numeric rank to pace bucket label."""
+    n_on_pace = max(1, n // 4)
+    if position == 1:
+        return 'leader'
+    elif position <= 1 + n_on_pace:
+        return 'on_pace'
+    elif position <= max(3, n * 2 // 3):
+        return 'midfield'
+    else:
+        return 'back'
+
+
+# ---------------------------------------------------------------------------
+# Phase 1: Start → 800m
+# ---------------------------------------------------------------------------
+
+def initialise_states(
+    slugs: List[str],
+    features: Dict[str, Dict],
+    weights: Dict[str, float],
+) -> List[HorseState]:
+    """Create HorseState objects at the barrier, one per horse."""
+    return [
+        HorseState(
+            slug=slug,
+            position=int(features.get(slug, {}).get('_barrier', i + 1)),
+            lane=int(features.get(slug, {}).get('_barrier', i + 1)),
+            gap_to_leader_m=0.0,
+            energy=1.0,
+            speed_m_per_s=BASE_PACE_MS,
+            checked=False,
+            finished=False,
+        )
+        for i, slug in enumerate(slugs)
+    ]
+
+
+def simulate_phase1(
+    states: List[HorseState],
+    features: Dict[str, Dict],
+    weights: Dict[str, float],
+    track_profile: dict,
+) -> List[HorseState]:
+    """Phase 1: Start → 800m.
+
+    Establishes 800m positions and initial energy levels.
+
+    Key physics:
+    - Gate speed z-score + stochastic noise → position score
+    - Barrier advantage: inside draw = bonus (mobile starts heavily, standing starts reduced)
+    - Gate clear attempt: wide horses may clear to rail if run_in allows it
+    - Energy assigned based on position bucket (leader pays most)
+    """
+    n = len(states)
+    if n == 0:
+        return states
+
+    start_type = track_profile.get('start_type', 'MS')
+    run_in = float(track_profile.get('run_in_metres', 100))
+    ss_eq = float(track_profile.get('standing_start_equalisation', 0.4))
+    gate_clear_threshold = int(track_profile.get('gate_clear_threshold', 4))
+
+    # Energy costs (track profile overrides sim_config defaults)
+    e_leader  = float(track_profile.get('leader_energy_cost',   PHASE1_LEADER_ENERGY_COST))
+    e_on_pace = float(track_profile.get('on_pace_cost',         PHASE1_ON_PACE_ENERGY_COST))
+    e_mid     = float(track_profile.get('midfield_cost',        PHASE1_MIDFIELD_ENERGY_COST))
+    e_back    = float(track_profile.get('back_cost',            PHASE1_BACK_ENERGY_COST))
+
+    luck_noise = float(weights.get('w_luck', 0.5))
+    gate_noise = GATE_NOISE_STD * luck_noise
+
+    # --- Compute position scores ---
+    scores: Dict[str, float] = {}
+    for s in states:
+        f = features.get(s.slug, {})
+        gate_z   = float(f.get('gate_speed_z', 0.0))
+        barrier  = int(f.get('_barrier', s.lane))
+
+        # Stochastic gate draw
+        gate_actual = gate_z + float(np.random.normal(0.0, gate_noise))
+
+        # Barrier advantage (0..1 scale; inside = 1.0)
+        barrier_adv = (n + 1 - barrier) / (n + 1)
+
+        # Overall class/quality: better horses tend to find positions earlier
+        class_z = float(f.get('class_relativity_z', 0.0))
+        quality = class_z * float(weights.get('w_class', 0.5)) * 0.4
+
+        if start_type == 'MS':
+            # Mobile: draw matters heavily; gate speed is decisive
+            score = gate_actual * 1.5 + barrier_adv * 2.0 + quality
+        else:
+            # Standing start: draw equalised based on track profile
+            score = gate_actual * 1.5 + barrier_adv * 2.0 * ss_eq + quality
+
+        # ODM penalty: out-of-draw horse starts disadvantaged regardless of barrier
+        odm_mult = float(f.get('_odm_multiplier', 1.0))
+        if odm_mult < 1.0:
+            score *= odm_mult
+
+        scores[s.slug] = score
+
+    # --- Gate clear attempts (mobile starts only, outside gate_clear_threshold) ---
+    if start_type == 'MS':
+        for s in states:
+            barrier = int(features.get(s.slug, {}).get('_barrier', s.lane))
+            if barrier <= 1:
+                continue
+            gate_z = float(features.get(s.slug, {}).get('gate_speed_z', 0.0))
+            p_clear = prob_gate_clear(barrier, gate_z, run_in, n)
+
+            # Only attempt clear if horse is fast enough and track allows it
+            if gate_z > -0.5 and barrier <= gate_clear_threshold + 3:
+                if np.random.random() < p_clear:
+                    new_lane = max(1, barrier // 2)
+                    s.lane = new_lane
+                    scores[s.slug] += 0.8  # bonus for successful clear
+
+    # --- Sort by score → establish 800m rank ---
+    sorted_slugs = sorted(scores, key=scores.__getitem__, reverse=True)
+    slug_to_state = {s.slug: s for s in states}
+
+    n_on_pace = max(1, n // 4)
+    n_midfield = max(1, n * 2 // 3 - n_on_pace - 1)
+
+    for rank, slug in enumerate(sorted_slugs, 1):
+        s = slug_to_state[slug]
+        s.position = rank
+        s.gap_to_leader_m = float((rank - 1) * PHASE1_GAP_PER_POSITION_M)
+        s.speed_m_per_s = BASE_PACE_MS
+
+        # Assign energy based on position bucket
+        if rank == 1:
+            s.energy = max(0.0, 1.0 - e_leader)
+        elif rank <= 1 + n_on_pace:
+            s.energy = max(0.0, 1.0 - e_on_pace)
+        elif rank <= 1 + n_on_pace + n_midfield:
+            s.energy = max(0.0, 1.0 - e_mid)
+        else:
+            s.energy = max(0.0, 1.0 - e_back)
+
+    return states
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: 800m → 400m
+# ---------------------------------------------------------------------------
+
+def simulate_phase2(
+    states: List[HorseState],
+    features: Dict[str, Dict],
+    weights: Dict[str, float],
+    track_profile: dict,
+) -> List[HorseState]:
+    """Phase 2: 800m → 400m.
+
+    Key physics:
+    - Energy depletion continues (shorter segment → lower costs than Phase 1)
+    - Width penalty: horses wide of rail travel extra metres per lap
+    - Random interference events (checked, bumped, etc.)
+    - Tactical moves: high-energy finishers can improve position
+    """
+    n = len(states)
+    if n == 0:
+        return states
+
+    # Energy costs for this segment (scaled down from phase 1)
+    e_leader  = float(track_profile.get('leader_energy_cost',   PHASE1_LEADER_ENERGY_COST))  * 0.5
+    e_on_pace = float(track_profile.get('on_pace_cost',         PHASE1_ON_PACE_ENERGY_COST)) * 0.5
+    e_mid     = float(track_profile.get('midfield_cost',        PHASE1_MIDFIELD_ENERGY_COST))* 0.5
+    e_back    = float(track_profile.get('back_cost',            PHASE1_BACK_ENERGY_COST))    * 0.5
+
+    n_on_pace = max(1, n // 4)
+
+    for s in states:
+        s.checked = False
+        f = features.get(s.slug, {})
+
+        # --- Energy depletion ---
+        if s.position == 1:
+            s.energy = max(0.0, s.energy - e_leader)
+        elif s.position <= 1 + n_on_pace:
+            s.energy = max(0.0, s.energy - e_on_pace)
+        elif s.position <= max(3, n * 2 // 3):
+            s.energy = max(0.0, s.energy - e_mid)
+        else:
+            s.energy = max(0.0, s.energy - e_back)
+
+        # --- Width penalty: horses wide of rail pay extra metres ---
+        if s.lane > 2:
+            extra_m = float(s.lane - 2) * WIDTH_PENALTY_M_PER_LANE
+            s.gap_to_leader_m += extra_m
+
+        # --- Stochastic interference event ---
+        if np.random.random() < INTERFERENCE_PROB:
+            s.checked = True
+            s.energy = max(0.0, s.energy - INTERFERENCE_ENERGY_COST)
+            s.gap_to_leader_m += INTERFERENCE_GAP_PENALTY_M
+
+    # --- Tactical moves: high-energy horses with good finishing speed advance ---
+    # Sort by current position so we don't double-count moves
+    for s in sorted(states, key=lambda x: x.position):
+        if s.position <= 2:
+            continue  # Leader and near-leader hold position
+        f = features.get(s.slug, {})
+        finish_z = float(f.get('finishing_speed_z', 0.0))
+
+        if s.energy > TACTICAL_ENERGY_THRESHOLD and finish_z > 0.3:
+            p_move = TACTICAL_MOVE_BASE_PROB * s.energy * min(1.0, finish_z / 1.5)
+            if np.random.random() < p_move:
+                s.gap_to_leader_m = max(0.1, s.gap_to_leader_m - TACTICAL_GAP_GAIN_M)
+
+    # Recalculate rank positions from updated gaps
+    _recalc_positions(states)
+
+    return states
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: 400m → Finish
+# ---------------------------------------------------------------------------
+
+def simulate_phase3(
+    states: List[HorseState],
+    features: Dict[str, Dict],
+    weights: Dict[str, float],
+    track_profile: dict,
+) -> List[HorseState]:
+    """Phase 3: 400m → Finish (home straight).
+
+    Key physics:
+    - available_speed = finishing_speed_z * energy_remaining
+    - metres_gained = (available_speed - leader_speed) * time_in_straight
+    - final_gap = gap_at_400m - metres_gained
+    - Sprint lane bonus at Hobart (rail horse, correct position only)
+
+    Burnie (95m straight):  very little time → position at turn ≈ final order
+    Launceston (220m):      meaningful closing — back-markers can charge
+    Hobart (200m + lane):   sprint lane gives rail horse a significant bonus
+    """
+    straight_m = float(track_profile.get('straight_m', 200))
+    has_sprint_lane = bool(track_profile.get('sprint_lane', False))
+    sprint_lane_bonus = float(track_profile.get('sprint_lane_bonus', 0.0))
+
+    # Time available in the straight (seconds)
+    time_in_straight = straight_m / BASE_PACE_MS
+
+    # Compute available sprint speed for each horse
+    available_speeds: Dict[str, float] = {}
+    for s in states:
+        f = features.get(s.slug, {})
+        finish_z = float(f.get('finishing_speed_z', 0.0))
+
+        # Class quality also boosts sprint: higher-class horses are simply faster
+        class_z = float(f.get('class_relativity_z', 0.0))
+        effective_finish_z = (
+            finish_z * float(weights.get('w_finishing_speed', 1.0)) * 0.7 +
+            class_z  * float(weights.get('w_class', 0.5))           * 0.3
+        )
+
+        # Convert z-score to speed differential:
+        # Energy modulates only the kick ABOVE base pace, not the base itself.
+        # A tired leader still sprints at BASE_PACE_MS; fresh horses earn a bonus.
+        # z=+1 at full energy → +9% above base; z=-1 → -9%.
+        avail = BASE_PACE_MS * (1.0 + effective_finish_z * 0.09 * max(0.0, s.energy))
+
+        # ODM penalty also reduces sprint effectiveness: horse went wide, is
+        # physically spent and out of its comfort zone in the straight.
+        odm_mult = float(f.get('_odm_multiplier', 1.0))
+        if odm_mult < 1.0:
+            avail *= odm_mult
+
+        # Sprint lane bonus (Hobart only) — rail horse in leading position
+        if has_sprint_lane and s.lane == 1 and s.position <= 2:
+            avail *= (1.0 + sprint_lane_bonus)
+
+        available_speeds[s.slug] = avail
+
+    # Identify current leader (smallest gap)
+    leader = min(states, key=lambda x: x.gap_to_leader_m)
+    leader_speed = available_speeds[leader.slug]
+
+    # Update gaps based on sprint speed relative to leader
+    for s in states:
+        if s.slug == leader.slug:
+            continue
+        metres_gained = (available_speeds[s.slug] - leader_speed) * time_in_straight
+        s.gap_to_leader_m -= metres_gained
+
+    # Mark all as finished; re-rank
+    for s in states:
+        s.finished = True
+
+    _recalc_positions(states)
+
+    return states
+
+
+# ---------------------------------------------------------------------------
+# Main entry point
+# ---------------------------------------------------------------------------
+
+def run_single_agentbased(
+    slugs: List[str],
+    z_scores: Dict[str, Dict[str, float]],
+    raw_features: Dict[str, Dict[str, float]],
+    weights: Dict[str, float],
+    track: str = '',
+    start_type: str = 'MS',
+    track_profile: Optional[dict] = None,
+) -> Tuple[List[str], List[str], Dict[str, str]]:
+    """Run one agent-based simulation of a harness race.
+
+    Args:
+        slugs:        Horse slugs in barrier order
+        z_scores:     {slug: {feature: z_value}} — normalised across field
+        raw_features: {slug: {feature: raw_value}} — includes _barrier, _odm_multiplier
+        weights:      Sampled weight vector (from draw_weights)
+        track:        Track name (e.g. 'Burnie')
+        start_type:   'MS' or 'SS'
+        track_profile: Full track profile dict from TRACK_PROFILES
+
+    Returns:
+        finish_order:   slugs from 1st to last
+        pace_order:     slugs by 800m position (front to back)
+        pace_positions: {slug: 'leader'|'on_pace'|'midfield'|'back'} at 800m
+    """
+    if track_profile is None:
+        track_profile = {}
+
+    n = len(slugs)
+
+    # --- Merge raw features and z-scores into a single lookup dict ---
+    # z-scores get '_z' suffix to avoid name collision with raw values
+    features: Dict[str, Dict] = {}
+    for slug in slugs:
+        combined = dict(raw_features.get(slug, {}))
+        for feat_name, z_val in z_scores.get(slug, {}).items():
+            combined[feat_name + '_z'] = z_val
+        features[slug] = combined
+
+    # --- Add start_type to track profile for phase functions ---
+    tp = dict(track_profile)
+    tp['start_type'] = start_type
+
+    # --- Phase 1: Start → 800m ---
+    states = initialise_states(slugs, features, weights)
+    states = simulate_phase1(states, features, weights, tp)
+
+    # Capture pace order and positions at 800m
+    sorted_at_800 = sorted(states, key=lambda s: s.gap_to_leader_m)
+    pace_order = [s.slug for s in sorted_at_800]
+    pace_positions: Dict[str, str] = {}
+
+    for s in sorted_at_800:
+        bucket = _position_bucket(s.position, n)
+        # Hobart sprint lane: on-pace runners split into garden_seat / midfield_runner
+        if bucket == 'on_pace' and track_profile.get('sprint_lane', False):
+            bucket = 'garden_seat' if np.random.random() < 0.55 else 'midfield_runner'
+        pace_positions[s.slug] = bucket
+
+    # --- Phase 2: 800m → 400m ---
+    states = simulate_phase2(states, features, weights, tp)
+
+    # --- Phase 3: 400m → Finish ---
+    states = simulate_phase3(states, features, weights, tp)
+
+    finish_order = [s.slug for s in sorted(states, key=lambda s: s.gap_to_leader_m)]
+
+    return finish_order, pace_order, pace_positions

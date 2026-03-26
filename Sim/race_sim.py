@@ -15,6 +15,7 @@ CLI Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 # Force UTF-8 output on Windows (avoids cp1252 UnicodeEncodeError)
@@ -27,14 +28,19 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-from form_parser import parse_form, Runner, RaceInfo
+from form_parser import parse_form, Runner, RaceInfo, parse_fields_doc, _is_fields_doc, normalise_track
 from feature_extractor import DataLoader, extract_all_features
 from report_generator import generate_report
 from track_profiles import apply_track_profile
+from agent_model import run_single_agentbased
 from sim_config import (
     WEIGHT_RANGES, TRACK_OVERRIDES, STANDING_START_BARRIER_ADJUSTMENT,
-    DEFAULT_RUNS, PACE_GAP_LEADER, PACE_GAP_ON_PACE, PACE_GAP_MIDFIELD,
-    FIELD_STRENGTH_BASELINE,
+    DEFAULT_RUNS, PACE_GAP_ON_PACE_STDEV, PACE_GAP_MIDFIELD_STDEV,
+    FIELD_STRENGTH_BASELINE, TRACK_PROFILES,
+    MAX_WIN_PCT_SINGLE_HORSE, DLW_DECAY,
+    CONVERGENCE_BATCH_SIZE, CONVERGENCE_THRESHOLD, CONVERGENCE_STABLE_BATCHES,
+    WIN_DROUGHT_WARN_DAYS,
+    ODM_MOBILE_PENALTY_SHORT, ODM_MOBILE_PENALTY_LONG,
 )
 
 
@@ -148,14 +154,16 @@ def zscore_field(
 # Simulation core
 # ---------------------------------------------------------------------------
 
-def run_single(
+def run_single_montecarlo(
     slugs: List[str],
     z_scores: Dict[str, Dict[str, float]],
     raw_features: Dict[str, Dict[str, float]],
     weights: Dict[str, float],
     track: str = '',
 ) -> Tuple[List[str], List[str], Dict[str, str]]:
-    """Run one simulation.
+    """Run one Monte Carlo simulation (legacy weighted-score model).
+
+    Kept for diff-report comparison with the new agent-based model.
 
     Returns:
         finishing_order: list of slugs from 1st to last
@@ -268,14 +276,102 @@ def run_single(
     return finish_order, pace_order, pace_positions
 
 
-def assign_pace_bucket(rank: int, n_runners: int, leader_score: float, my_score: float) -> str:
-    """Classify pace position based on z-score gap from leader."""
+# ---------------------------------------------------------------------------
+# DLW decay and convergence utilities
+# ---------------------------------------------------------------------------
+
+def _compute_dlw_decay(dlw_score: float) -> float:
+    """Map normalised days_since_last_win score → pre-sim feature decay multiplier.
+
+    dlw_score is the feature value from compute_days_since_last_win():
+      +1.0 = very recent win (0 days)
+       0.0 = ~WIN_DROUGHT_WARN_DAYS/2 days since last win
+      -1.0 = never won or >WIN_DROUGHT_WARN_DAYS days
+
+    Returns a multiplier in [0.30, 1.00] applied to z-scores before simulation.
+    Only applies meaningful decay when approximated days exceed 200.
+    """
+    if dlw_score <= -0.9:  # Never won or extreme drought
+        return 0.30
+    # Approximate raw days from normalised score:
+    # score = 1.0 - (days / WIN_DROUGHT_WARN_DAYS)  →  days = (1.0 - score) * WDWD
+    approx_days = (1.0 - dlw_score) * WIN_DROUGHT_WARN_DAYS
+
+    # Interpolate DLW_DECAY breakpoint table
+    table = sorted(DLW_DECAY.items())   # [(days, mult), ...]
+    for i in range(len(table) - 1):
+        d0, m0 = table[i]
+        d1, m1 = table[i + 1]
+        if d0 <= approx_days <= d1:
+            t = (approx_days - d0) / (d1 - d0)
+            return float(m0 + t * (m1 - m0))
+    return 0.30   # Beyond last breakpoint
+
+
+def _apply_dlw_decay_to_zscores(
+    z_scores: Dict[str, Dict[str, float]],
+    all_features: Dict[str, Dict[str, float]],
+    slugs: List[str],
+) -> Dict[str, Dict[str, float]]:
+    """Pre-simulation: scale z-scores for horses with long win droughts.
+
+    Returns a new z_scores dict (original untouched) with DLW multipliers applied
+    to gate_speed, finishing_speed, class_relativity, and mile_rate_trend.
+
+    Horses with DLW <= 200 days are unaffected (multiplier = 1.0).
+    """
+    scaled = {slug: dict(z_scores[slug]) for slug in slugs}
+    _dlw_affected_features = ('gate_speed', 'finishing_speed', 'class_relativity', 'mile_rate_trend')
+
+    for slug in slugs:
+        dlw_score = float(all_features.get(slug, {}).get('days_since_last_win', 0.0))
+        decay = _compute_dlw_decay(dlw_score)
+        if decay < 1.0:
+            for feat in _dlw_affected_features:
+                if feat in scaled[slug]:
+                    scaled[slug][feat] *= decay
+
+    return scaled
+
+
+def _check_convergence(
+    win_pcts_history: List[Dict[str, float]],
+    slugs: List[str],
+) -> bool:
+    """Return True if top-3 horses' win% has stabilised across the last two checkpoints.
+
+    Convergence criterion: max shift in win% for top-3 slugs is < CONVERGENCE_THRESHOLD
+    for CONVERGENCE_STABLE_BATCHES consecutive batch comparisons.
+    """
+    if len(win_pcts_history) < CONVERGENCE_STABLE_BATCHES + 1:
+        return False
+
+    # Identify top-3 by most recent win%
+    latest = win_pcts_history[-1]
+    top3 = sorted(latest, key=latest.__getitem__, reverse=True)[:3]
+
+    stable_count = 0
+    for i in range(len(win_pcts_history) - 1, 0, -1):
+        prev = win_pcts_history[i - 1]
+        curr = win_pcts_history[i]
+        max_shift = max(abs(curr.get(s, 0.0) - prev.get(s, 0.0)) for s in top3)
+        if max_shift < CONVERGENCE_THRESHOLD:
+            stable_count += 1
+        else:
+            break   # Need consecutive stable batches
+        if stable_count >= CONVERGENCE_STABLE_BATCHES:
+            return True
+
+    return False
+
+
+def assign_pace_bucket(rank: int, n_runners: int, leader_score: float, my_score: float,
+                       field_std: float = 1.0) -> str:
+    """Classify pace position based on relative gap from leader (stdev-scaled)."""
     gap = leader_score - my_score
-    if gap <= PACE_GAP_LEADER:
-        return 'leader'
-    elif gap <= PACE_GAP_ON_PACE:
+    if gap <= PACE_GAP_ON_PACE_STDEV * field_std:
         return 'on_pace'
-    elif gap <= PACE_GAP_MIDFIELD:
+    elif gap <= PACE_GAP_MIDFIELD_STDEV * field_std:
         return 'midfield'
     else:
         return 'back'
@@ -286,42 +382,82 @@ def run_simulation(
     all_features: Dict[str, Dict[str, float]],
     n_runs: int = DEFAULT_RUNS,
 ) -> Dict:
-    """Run the full Monte Carlo simulation.
+    """Run the full agent-based simulation (Monte Carlo over the agent model).
+
+    Each run draws a weight vector, then calls run_single_agentbased() which
+    simulates the race in three physical phases. Finish order emerges from
+    position state rather than from a pre-computed score.
 
     Returns a results dict with:
-        win_counts, place_counts (top-3), pos_counts (all positions),
-        pace_counts (leader/on_pace/midfield/back),
-        weight_samples (list of weight dicts),
-        weight_win_rates (for robustness analysis)
+        win_pct, place_pct (top-3), avg_pos,
+        pace_pct (leader/on_pace/midfield/back),
+        weight_win_rates (robustness analysis),
+        n_runs (actual runs completed),
+        convergence_run (run count when converged, or None),
     """
     runners = race_info.runners
     slugs = [r.slug for r in runners]
     n = len(slugs)
 
-    # Normalise features across field
+    # --- Inject raw barrier into features for agent model ---
+    for runner in runners:
+        if runner.slug in all_features:
+            all_features[runner.slug]['_barrier'] = float(runner.barrier)
+
+    # --- Inject ODM multiplier into features ---
+    distance_m = race_info.distance_m or 0
+    for runner in runners:
+        if runner.slug in all_features:
+            if getattr(runner, 'odm_mobile', False) and race_info.start_type == 'MS':
+                mult = ODM_MOBILE_PENALTY_SHORT if distance_m < 2000 else ODM_MOBILE_PENALTY_LONG
+            else:
+                mult = 1.0
+            all_features[runner.slug]['_odm_multiplier'] = mult
+
+    # --- Normalise features across field ---
     z_scores = zscore_field(all_features, slugs, SCORED_FEATURES)
 
-    # Effective weight ranges for this track/start type
+    # --- Pre-simulation DLW decay: scale z-scores for horses on win droughts ---
+    z_scores = _apply_dlw_decay_to_zscores(z_scores, all_features, slugs)
+
+    # --- Track profile for agent model ---
+    track_profile = TRACK_PROFILES.get(race_info.track, {})
+    # Resolve proxy tracks (e.g. Scottsdale uses Burnie)
+    if 'use_proxy' in track_profile:
+        track_profile = TRACK_PROFILES.get(track_profile['use_proxy'], track_profile)
+
+    # --- Effective weight ranges for this track/start type ---
     eff_ranges = _effective_weight_ranges(race_info.track, race_info.start_type)
 
-    # Accumulators
-    win_counts = {s: 0 for s in slugs}
+    # --- Accumulators ---
+    win_counts  = {s: 0 for s in slugs}
     place_counts = {s: 0 for s in slugs}  # top 3
-    pos_total = {s: 0 for s in slugs}     # sum of finish positions (for avg)
-    pace_counts = {s: {'leader': 0, 'on_pace': 0, 'midfield': 0, 'back': 0} for s in slugs}
-    weight_samples = []
+    pos_total    = {s: 0 for s in slugs}  # sum of finish positions (for avg)
+    pace_counts  = {s: {'leader': 0, 'on_pace': 0, 'midfield': 0, 'back': 0} for s in slugs}
 
-    # For robustness: bin runs by w_gate_speed tertile and track win rates
     gate_wins = {'low': {s: 0 for s in slugs}, 'mid': {s: 0 for s in slugs}, 'high': {s: 0 for s in slugs}}
     gate_runs = {'low': 0, 'mid': 0, 'high': 0}
 
-    for _ in range(n_runs):
-        weights = draw_weights(eff_ranges)
-        weight_samples.append(weights)
+    # --- Convergence tracking ---
+    win_pcts_history: List[Dict[str, float]] = []
+    convergence_run: int = None
+    runs_done = 0
 
-        finish_order, pace_order, pace_positions = run_single(
-            slugs, z_scores, all_features, weights, track=race_info.track
+    # --- Main simulation loop ---
+    for run_idx in range(n_runs):
+        weights = draw_weights(eff_ranges)
+
+        finish_order, pace_order, pace_positions = run_single_agentbased(
+            slugs=slugs,
+            z_scores=z_scores,
+            raw_features=all_features,
+            weights=weights,
+            track=race_info.track,
+            start_type=race_info.start_type,
+            track_profile=track_profile,
         )
+
+        runs_done += 1
 
         # Tally finishing positions
         for pos, slug in enumerate(finish_order):
@@ -331,56 +467,72 @@ def run_simulation(
                 place_counts[slug] += 1
             pos_total[slug] += (pos + 1)
 
-        # Tally pace positions from track profile assignment
+        # Tally pace positions
         for slug, bucket in pace_positions.items():
-            # Map sprint-lane labels back to standard buckets for the report counter
             std_bucket = bucket if bucket in pace_counts[slug] else (
                 'on_pace' if bucket in ('garden_seat', 'midfield_runner') else bucket
             )
             if std_bucket in pace_counts[slug]:
                 pace_counts[slug][std_bucket] += 1
 
-        # Robustness binning
+        # Robustness binning by w_gate_speed tertile
         g = weights['w_gate_speed']
         lo, hi = eff_ranges['w_gate_speed']
-        mid = (lo + hi) / 2
-        q1 = lo + (mid - lo) / 2
-        q3 = mid + (hi - mid) / 2
-        if g < q1:
-            band = 'low'
-        elif g < q3:
-            band = 'mid'
-        else:
-            band = 'high'
+        mid_pt = (lo + hi) / 2
+        q1 = lo + (mid_pt - lo) / 2
+        q3 = mid_pt + (hi - mid_pt) / 2
+        band = 'low' if g < q1 else ('mid' if g < q3 else 'high')
         gate_runs[band] += 1
-        winner = finish_order[0]
-        gate_wins[band][winner] += 1
+        gate_wins[band][finish_order[0]] += 1
 
-    # Convert counts to probabilities
-    win_pct = {s: win_counts[s] / n_runs for s in slugs}
-    place_pct = {s: place_counts[s] / n_runs for s in slugs}
-    avg_pos = {s: pos_total[s] / n_runs for s in slugs}
-    pace_pct = {
-        s: {k: v / n_runs for k, v in pace_counts[s].items()}
+        # --- Convergence check every CONVERGENCE_BATCH_SIZE runs ---
+        if convergence_run is None and runs_done % CONVERGENCE_BATCH_SIZE == 0:
+            current_pcts = {s: win_counts[s] / runs_done for s in slugs}
+            win_pcts_history.append(current_pcts)
+            if _check_convergence(win_pcts_history, slugs):
+                convergence_run = runs_done
+                print(f"[race_sim] Converged at {runs_done:,} runs")
+                break
+
+    if convergence_run is None:
+        print(f"[race_sim] Ran full {runs_done:,} runs without early convergence")
+
+    # --- Convert counts to probabilities ---
+    win_pct   = {s: win_counts[s]  / runs_done for s in slugs}
+    place_pct = {s: place_counts[s] / runs_done for s in slugs}
+    avg_pos   = {s: pos_total[s]   / runs_done for s in slugs}
+    pace_pct  = {
+        s: {k: v / runs_done for k, v in pace_counts[s].items()}
         for s in slugs
     }
 
-    # Robustness: win rate per weight band
+    # --- Robustness: win rate per weight band ---
     weight_win_rates = {}
     for slug in slugs:
         rates = {}
-        for band in ('low', 'mid', 'high'):
-            denom = gate_runs[band]
-            rates[band] = gate_wins[band][slug] / denom if denom > 0 else 0.0
+        for band_key in ('low', 'mid', 'high'):
+            denom = gate_runs[band_key]
+            rates[band_key] = gate_wins[band_key][slug] / denom if denom > 0 else 0.0
         weight_win_rates[slug] = rates
 
+    # --- Win% sanity check ---
+    for slug in slugs:
+        if win_pct[slug] > MAX_WIN_PCT_SINGLE_HORSE:
+            horse_name = next((r.horse for r in runners if r.slug == slug), slug)
+            print(
+                f"[WARNING] {horse_name} win% = {win_pct[slug]*100:.1f}% "
+                f"— exceeds {MAX_WIN_PCT_SINGLE_HORSE*100:.0f}% ceiling. "
+                f"Possible data artefact — check manually."
+            )
+
     return {
-        'win_pct': win_pct,
-        'place_pct': place_pct,
-        'avg_pos': avg_pos,
-        'pace_pct': pace_pct,
+        'win_pct':          win_pct,
+        'place_pct':        place_pct,
+        'avg_pos':          avg_pos,
+        'pace_pct':         pace_pct,
         'weight_win_rates': weight_win_rates,
-        'n_runs': n_runs,
+        'n_runs':           runs_done,
+        'convergence_run':  convergence_run,
     }
 
 
@@ -393,8 +545,14 @@ def main():
         description='Monte Carlo Race Simulation Engine — Tasmanian Harness Racing'
     )
     parser.add_argument(
-        '--form', required=True,
-        help='Path to PDF race form guide (e.g. "Hobart Harness 15-03-2026.pdf")'
+        '--form', default=None,
+        help=(
+            'Form input — one of:\n'
+            '  PDF file path:  "Hobart Harness 15-03-2026.pdf"\n'
+            '  Text file path: "race.txt"  (any non-.pdf file is read as pasted text)\n'
+            '  Stdin:          "-"  (pipe or redirect: echo "..." | python race_sim.py --form -)\n'
+            'Omit entirely to read pasted text from stdin interactively.'
+        )
     )
     parser.add_argument(
         '--data', default='output/claude_data',
@@ -410,15 +568,109 @@ def main():
     )
     parser.add_argument(
         '--race', type=int, default=0,
-        help='Race number to simulate (e.g. --race 3). Omit to list all races in the PDF.'
+        help='Race number to simulate from a PDF (e.g. --race 3). Omit to list all races.'
+    )
+    parser.add_argument(
+        '--start', choices=['MS', 'SS'],
+        help='Override start type: MS = mobile, SS = standing'
+    )
+    parser.add_argument(
+        '--all', action='store_true',
+        help='Simulate all races in the form document sequentially'
     )
     args = parser.parse_args()
 
-    # 1. Parse form
-    print(f"\n[race_sim] Parsing form: {args.form!r}")
+    # 1. Resolve form input → string passed to parse_form
+    #
+    #   --form foo.pdf        → PDF path (unchanged)
+    #   --form foo.txt        → read file, pass text content
+    #   --form -              → read stdin, pass text content
+    #   --form omitted        → read stdin interactively, pass text content
+    #   --form "1. Horse ..." → inline text (no file, not .pdf)
+
+    form_arg = args.form
+
+    if form_arg is None or form_arg == '-':
+        # Read from stdin
+        if form_arg is None and sys.stdin.isatty():
+            print("[race_sim] No --form given. Paste race field below, then press Ctrl-D (EOF):\n")
+        form_str = sys.stdin.read()
+        label = '<stdin>'
+    elif form_arg.lower().endswith('.pdf'):
+        form_str = form_arg          # parse_form handles PDF path directly
+        label = form_arg
+    elif os.path.isfile(form_arg):
+        # Text file — read its contents
+        with open(form_arg, encoding='utf-8', errors='replace') as fh:
+            form_str = fh.read()
+        label = form_arg
+    else:
+        # Treat as inline pasted text
+        form_str = form_arg
+        label = '<inline text>'
+
+    print(f"\n[race_sim] Parsing form: {label!r}")
+
+    # --- --all mode: simulate every race in the document ---
+    if args.all:
+        if not _is_fields_doc(form_str):
+            print("[ERROR] --all requires a harness.au fields document", file=sys.stderr)
+            sys.exit(1)
+        races = parse_fields_doc(form_str, data_dir=args.data)
+        if args.track:
+            for r in races:
+                r.track = normalise_track(args.track)
+        if args.start:
+            for r in races:
+                r.start_type = args.start
+        print(f"[race_sim] {len(races)} races found — simulating all\n")
+
+        data = DataLoader(args.data)
+        summary = []
+
+        for race_info in races:
+            if not race_info.runners:
+                print(f"  R{race_info.race_no}: No active runners — skipping\n")
+                continue
+
+            print(f"{'='*60}")
+            print(f"R{race_info.race_no}: {race_info.distance_m}m {race_info.start_type} "
+                  f"— {len(race_info.runners)} runners")
+            print(f"{'='*60}")
+            for r in race_info.runners:
+                print(f"  {r.tab_no or r.barrier:>2}.  {r.horse:<28}  Barrier {r.barrier}  "
+                      f"Driver: {r.driver}  NR: {r.nr or '—'}")
+
+            all_features, warnings = extract_all_features(race_info, data)
+            print(f"\n[race_sim] Running {args.runs:,} simulations ...")
+            results = run_simulation(race_info, all_features, n_runs=args.runs)
+            print()
+            generate_report(results, race_info, all_features, warnings)
+
+            # Collect top-3 for summary
+            win_pct = results['win_pct']
+            top3 = []
+            for s in sorted(win_pct, key=win_pct.get, reverse=True)[:3]:
+                horse = next((r.horse for r in race_info.runners if r.slug == s), s)
+                top3.append((horse, win_pct[s]))
+            summary.append((race_info.race_no, race_info.distance_m, race_info.start_type, top3))
+
+        # Print meeting summary
+        print(f"\n\n{'='*70}")
+        print("MEETING SUMMARY")
+        print(f"{'='*70}")
+        for race_no, dist, st, top3 in summary:
+            line_parts = [f"R{race_no:<2} {dist:>5}m {st}  "]
+            for i, (horse, pct) in enumerate(top3):
+                tag = ['1st', '2nd', '3rd'][i]
+                line_parts.append(f"{tag}: {horse[:22]:<22} {pct*100:5.1f}%  ")
+            print(''.join(line_parts))
+        return
+
+    # --- Single-race mode ---
     try:
         race_info = parse_form(
-            form_str=args.form,
+            form_str=form_str,
             data_dir=args.data,
             track_override=args.track,
             race_no=args.race,
@@ -426,6 +678,10 @@ def main():
     except Exception as e:
         print(f"[ERROR] Could not parse form: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # Apply start-type override after parsing
+    if args.start:
+        race_info.start_type = args.start
 
     if not race_info.runners:
         print("[ERROR] No runners found in form input.", file=sys.stderr)

@@ -1218,7 +1218,7 @@ def scrape_bulk(txt_file: str, entity_type: str, out_dir: str):
         try:
             if entity_type == "horse":
                 d = extract_horse_data(slug)
-                export_horse_csv(d, out_dir)
+                export_horse(d, f"{out_dir}/{slug}.xlsx")
                 for row in d.get("results", []):
                     all_results.append({"_horse": slug, **row})
             else:
@@ -2694,24 +2694,22 @@ def fetch_stride_horses(horses_file: str, out_dir: str,
             profile, runs = _fetch_stride_horse(display, since_date=since)
 
             if not profile and not runs:
-                # Fallback 1: pure title case (handles "Dalton Shard Nz" vs "Dalton Shard NZ")
                 display_fb = slug.replace("-", " ").title()
                 if display_fb != display:
                     profile, runs = _fetch_stride_horse(display_fb, since_date=since)
                     if profile or runs:
                         display = display_fb
 
-            if not profile and not runs:
-                # Fallback 2: try NZ suffix variants (uppercase then title case)
-                for suffix_variant in (" NZ", " Nz"):
-                    base = _re.sub(r'\s+(NZ|Nz|nz)$', '', display).strip()
-                    candidate = base + suffix_variant
-                    if candidate != display:
-                        profile, runs = _fetch_stride_horse(candidate, since_date=since)
-                        if profile or runs:
-                            display = candidate
-                            slug = _name_to_slug(display.upper())
-                            break
+            # If still no data, try appending NZ suffix (handles slugs scraped from
+            # sectionals ALL-CAPS format that stripped the country suffix, e.g.
+            # 'imperial-laz' should resolve as 'Imperial Laz NZ').
+            if not profile and not runs and not slug.endswith('-nz'):
+                display_nz = display + ' NZ'
+                profile, runs = _fetch_stride_horse(display_nz, since_date=since)
+                if profile or runs:
+                    display = display_nz
+                    slug = slug + '-nz'
+                    print(f"  [{i:>3}/{total}] NZ suffix resolved: {slug}")
 
             if not profile and not runs:
                 print(f"  [{i:>3}/{total}] {slug:45s} ✗ no data")
@@ -2739,13 +2737,11 @@ def fetch_stride_horses(horses_file: str, out_dir: str,
     if new_profiles:
         if (resume or update) and profiles_csv.exists():
             df_old = pd.read_csv(profiles_csv)
-            # Always remove existing rows for re-fetched slugs before appending
-            df_old = df_old[~df_old["Slug"].isin({r["Slug"] for r in new_profiles})]
+            if update:
+                df_old = df_old[~df_old["Slug"].isin({r["Slug"] for r in new_profiles})]
             df_p = pd.concat([df_old, pd.DataFrame(new_profiles)], ignore_index=True)
         else:
             df_p = pd.DataFrame(new_profiles)
-        # Final dedup safety net — keep last occurrence per slug
-        df_p = df_p.drop_duplicates(subset=["Slug"], keep="last")
         df_p.to_csv(profiles_csv, index=False)
         print(f"\n✅ stride_profiles.csv — {len(df_p)} horses")
 
@@ -2863,7 +2859,7 @@ def main():
         elif args.csv:
             export_horse_csv(d, args.out)
         else:
-            export_horse_csv(d, args.out)
+            export_horse(d, f"{args.out}/{args.horse}.xlsx")
 
     if args.trainer:
         d = extract_person_data(args.trainer, "trainer", headless)

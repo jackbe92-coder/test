@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python race_sim.py --form \"Hobart Harness 15-03-2026.pdf\" --data output/claude_data)",
+      "Bash(python race_sim.py --form \"Hobart Harness 15-03-2026.pdf\" --race 1 --data output/claude_data --runs 1000)",
+      "Bash(python -c \":*)",
+      "Bash(python debug_pdf.py \"burnie-2026-03-13-N-form.pdf\")",
+      "Bash(python race_sim.py --form \"burnie-2026-03-13-N-form.pdf\" --data output/claude_data)",
+      "Bash(python race_sim.py --form \"burnie-2026-03-13-N-form.pdf\" --race 1 --data output/claude_data --runs 1000)",
+      "Bash(for i:*)",
+      "Bash(do python:*)",
+      "Bash(done)",
+      "Bash(python launceston_22march2026_sim.py)",
+      "Bash(python Sim/launceston_22march2026_sim.py)",
+      "Bash(python test_fields_parser.py)"
+    ],
+    "defaultMode": "bypassPermissions"
+  }
+}

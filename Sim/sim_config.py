@@ -142,7 +142,7 @@ LAST_800_LOOKBACK = 5
 # ---------------------------------------------------------------------------
 # Simulation defaults
 # ---------------------------------------------------------------------------
-DEFAULT_RUNS = 1000
+DEFAULT_RUNS = 50000  # Run overnight — stability over speed
 
 # Robustness thresholds (as fraction of total runs)
 ROBUST_WIN_THRESHOLD = 0.20     # wins >20% of simulations = robust
@@ -152,10 +152,79 @@ FRAGILE_VARIANCE_THRESHOLD = 0.15  # win% std-dev across weight bands > this = f
 VALUE_EDGE_THRESHOLD = 0.05    # sim win% at least 5pp above implied SP% = VALUE
 OVERBET_EDGE_THRESHOLD = -0.05  # sim win% at least 5pp below implied SP% = OVERBET
 
-# Speed map position categories (z-score gap from leader in pace score)
-PACE_GAP_LEADER = 0.4    # within this z-score gap = Leader
-PACE_GAP_ON_PACE = 1.2   # within this = On Pace
-PACE_GAP_MIDFIELD = 2.5  # within this = Midfield; above = Back Marker
+# ---------------------------------------------------------------------------
+# Agent-based model constants
+# ---------------------------------------------------------------------------
+
+# Baseline harness pace (metres per second)
+BASE_PACE_MS = 14.0
+
+# Recency decay half-life for time-series features
+RECENCY_HALF_LIFE_DAYS = 60
+
+# Data quality
+MIN_DATA_CONFIDENCE = 0.4   # warn below this
+MAX_WIN_PCT_SINGLE_HORSE = 0.75  # flag if any horse exceeds 75% in a field of 8+
+
+# DLW (Days since Last Win) decay multiplier table
+# Interpolate between breakpoints. Beyond 400 → 0.30.
+DLW_DECAY = {
+    0:   1.00,   # Won recently
+    60:  0.95,
+    120: 0.85,
+    200: 0.70,   # Meaningful discount begins
+    300: 0.50,   # Strong discount
+    400: 0.30,   # Last chance territory
+}
+
+# Phase 1 (Start → 800m) energy costs per position bucket
+# These are fractional energy depleted through the first 800m segment.
+# Burnie (short circuit, more laps early) has higher costs than Launceston.
+# Track profiles may override these per track.
+PHASE1_LEADER_ENERGY_COST   = 0.15
+PHASE1_ON_PACE_ENERGY_COST  = 0.10
+PHASE1_MIDFIELD_ENERGY_COST = 0.06
+PHASE1_BACK_ENERGY_COST     = 0.03
+
+# Phase 2 (800m → 400m) energy costs — shorter segment, ~50% of phase 1
+PHASE2_LEADER_ENERGY_COST   = 0.08
+PHASE2_ON_PACE_ENERGY_COST  = 0.05
+PHASE2_MIDFIELD_ENERGY_COST = 0.03
+PHASE2_BACK_ENERGY_COST     = 0.015
+
+# Gate speed noise — scaled by w_luck per run
+GATE_NOISE_STD = 0.6
+
+# Gap between successive positions at 800m (metres)
+PHASE1_GAP_PER_POSITION_M = 4.0
+
+# Convergence check parameters
+CONVERGENCE_BATCH_SIZE    = 5000   # runs per batch before checking convergence
+CONVERGENCE_THRESHOLD     = 0.005  # max shift in top-3 win% between batches
+CONVERGENCE_STABLE_BATCHES = 2     # stop if stable for this many consecutive batches
+
+# ODM (Out of Draw in Mobiles) penalty multipliers on position-dependent features
+ODM_MOBILE_PENALTY_SHORT = 0.30   # <2000m: severe (almost no time to recover)
+ODM_MOBILE_PENALTY_LONG  = 0.60   # >=2200m: less punishing
+
+# Width penalty in Phase 2 — extra metres per lane outside rail per 400m segment
+WIDTH_PENALTY_M_PER_LANE = 0.5
+
+# Interference probability per horse per phase segment
+INTERFERENCE_PROB = 0.05
+INTERFERENCE_ENERGY_COST = 0.05
+INTERFERENCE_GAP_PENALTY_M = 5.0
+
+# Tactical move probability parameters
+TACTICAL_ENERGY_THRESHOLD = 0.75   # horse must have >75% energy to attempt move
+TACTICAL_MOVE_BASE_PROB   = 0.25   # base probability when threshold met
+TACTICAL_GAP_GAIN_M       = 3.0    # metres gained by successful tactical move
+
+# Speed map position categories — relative to field std-dev of pace scores each run.
+# Using field-relative thresholds prevents one dominant horse from collapsing all
+# others to 'back' (which happened with fixed absolute gaps).
+PACE_GAP_ON_PACE_STDEV   = 1.5   # within 1.5 × field_std of leader = leader/on_pace
+PACE_GAP_MIDFIELD_STDEV  = 3.0   # within 3.0 × field_std = midfield; beyond = back
 
 # ---------------------------------------------------------------------------
 # Venue name normalisation map (handle abbreviations / alternate spellings)
@@ -225,7 +294,19 @@ VENUE_WIN_PCT_COLUMNS = {
 # ---------------------------------------------------------------------------
 TRACK_PROFILES = {
     'Burnie': {
+        # ── Physical layout ──────────────────────────────────────────────────
         'length_m': 607, 'straight_m': 95, 'sprint_lane': False,
+        'circuit_length_m': 607,
+        'run_in_metres': 80,          # Very short — almost no time to clear outside
+        'gate_clear_threshold': 2,    # Only B1-B2 can realistically clear to rail
+        'standing_start_equalisation': 0.5,  # Short run still rewards draw somewhat
+        # ── Pace physics ─────────────────────────────────────────────────────
+        # Burnie: short circuit = more circuits = more pace work = higher energy cost
+        'leader_energy_cost': 0.22,
+        'on_pace_cost':        0.15,
+        'midfield_cost':       0.10,
+        'back_cost':           0.05,
+        # ── Historical data ──────────────────────────────────────────────────
         'leader_win_pct': 0.68,   # Data: 19/28
         # Fixed multipliers — leader 2.8 = 68%/12.5% baseline
         'position_multiplier': {
@@ -234,12 +315,31 @@ TRACK_PROFILES = {
             'midfield': 0.1,
             'back':     0.05,
         },
+        # Cap back-marker pre-multiplier score to field average before applying 0.05x.
+        # Prevents dominant class scores from overriding track reality at a 607m circuit.
+        'cap_back_score': True,
+        # Tighter on-pace threshold: at 607m horses bunch early, gap between
+        # leader and 2nd is small. Override global 1.5× with 1.0×.
+        'pace_gap_on_pace_stdev': 1.8,
         'gate_speed_weight_boost':    0.5,
         'barrier_weight_boost':       0.4,
         'finishing_weight_penalty':  -0.3,
     },
     'Hobart': {
+        # ── Physical layout ──────────────────────────────────────────────────
         'length_m': 970, 'straight_m': 200, 'sprint_lane': True,
+        'circuit_length_m': 850,
+        'run_in_metres': 150,         # Medium run-in — moderate gate clear opportunity
+        'gate_clear_threshold': 4,    # Up to B4 can reasonably clear to sprint lane
+        'standing_start_equalisation': 0.4,
+        # ── Pace physics ─────────────────────────────────────────────────────
+        'leader_energy_cost': 0.17,
+        'on_pace_cost':        0.12,
+        'midfield_cost':       0.08,
+        'back_cost':           0.04,
+        # Sprint lane: only horses on rail at 400m get the bonus
+        'sprint_lane_bonus': 0.3,
+        # ── Historical data ──────────────────────────────────────────────────
         'leader_win_pct': 0.38,   # Data: 25/65
         'garden_seat_win_pct': 0.152,
         'position_multiplier': {
@@ -249,14 +349,25 @@ TRACK_PROFILES = {
             'midfield':        0.5,
             'back':            0.3,
         },
-        'sprint_lane_bonus': 0.3,
         'gate_speed_weight_boost':   0.0,
         'barrier_weight_boost':     -0.2,
         'finishing_weight_boost':    0.3,
     },
     'Launceston': {
+        # ── Physical layout ──────────────────────────────────────────────────
         'length_m': 1000, 'straight_m': 220, 'sprint_lane': False,
-        'leader_win_pct': 0.12,
+        'circuit_length_m': 1018,
+        'run_in_metres': 180,         # Long run-in — gate speed CAN overcome wide draw
+        'gate_clear_threshold': 5,    # Up to B5-B6 can clear on a fast jump
+        'standing_start_equalisation': 0.3,  # Long run-in = draw matters least in SS
+        # ── Pace physics ─────────────────────────────────────────────────────
+        # Launceston: long circuit = fewer laps = lower energy cost for leaders
+        'leader_energy_cost': 0.15,
+        'on_pace_cost':        0.10,
+        'midfield_cost':       0.06,
+        'back_cost':           0.03,
+        # ── Historical data ──────────────────────────────────────────────────
+        'leader_win_pct': 0.12,   # Data: closing speed dominates
         'position_multiplier': {
             'leader':   1.0,
             'on_pace':  1.1,
@@ -269,7 +380,18 @@ TRACK_PROFILES = {
         'finishing_weight_boost':     0.3,
     },
     'Carrick': {
+        # ── Physical layout ──────────────────────────────────────────────────
         'length_m': 900, 'straight_m': 150, 'sprint_lane': False,
+        'circuit_length_m': 900,
+        'run_in_metres': 120,
+        'gate_clear_threshold': 3,
+        'standing_start_equalisation': 0.45,
+        # ── Pace physics ─────────────────────────────────────────────────────
+        'leader_energy_cost': 0.18,
+        'on_pace_cost':        0.12,
+        'midfield_cost':       0.07,
+        'back_cost':           0.04,
+        # ── Historical data ──────────────────────────────────────────────────
         'leader_win_pct': 0.33,
         'position_multiplier': {
             'leader':   1.8,

@@ -1,0 +1,705 @@
+==============================================================================
+  LAUNCESTON HARNESS — 22 MARCH 2026 — ALL 9 RACES
+==============================================================================
+  [LNCT] Track profile UNVALIDATED — outputs carry lower confidence than Burnie
+  Simulation: 2,000 Monte Carlo runs per race
+
+Loading historical data ...
+  stride_results  : 5931 rows
+  stride_profiles : 346 rows
+  drivers_profile : 159 rows
+
+==============================================================================
+  [LNCT] RACE 1  —  ABBREVIATED
+==============================================================================
+Race    : 1  |  2200m  |  MS  |  9 runners
+Data coverage: 9/9 horses (100%)  — confidence: MODERATE
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R1  (2200m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────── 1. PROBABILITY TABLE ─────────────────────────
+Horse                        Bar Driver               Win%   Plc%    Odds      SP Value   
+------------------------------------------------------------------------------------------
+Enjoy Life                     3 Mark Yole           67.7%  97.8%    $1.5       — —       
+Another Nien                   9 Jacob Duggan        29.1%  97.5%    $3.4       — —       
+Magic Joe                      7 Todd Rattray         2.9%  85.8%   $34.5       — —       
+Wavethebill                    1 Dylan Ford           0.2%   4.3%  $500.0       — —       
+Zara Tindall                   5 Grace Jones          0.1%   3.7% $1000.0       — —       
+Rockandahardplace              2 John Walters         0.1%   5.5% $2000.0       — —       
+My Way                         4 Ricky Duggan         0.0%   0.0%       —       — —       
+Mr Bondi                       6 Tiarna Ford          0.0%   5.3%       —       — —       
+Lynryd Skynryd                 8 Gareth Rattray       0.0%   0.0%       —       — —       
+
+─────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────
+Horse                         Lead%  OnPace%   Mid%  Back%  Most Likely
+-----------------------------------------------------------------------
+Enjoy Life                      56%      44%     0%     0%  Leader
+Magic Joe                       14%      72%    15%     0%  On Pace
+Mr Bondi                        13%      79%     8%     0%  On Pace
+Zara Tindall                    12%      82%     6%     0%  On Pace
+Another Nien                     3%      59%    37%     1%  On Pace
+Wavethebill                      1%       7%    90%     2%  Midfield
+Rockandahardplace                0%      11%    88%     0%  Midfield
+My Way                           0%       2%    95%     3%  Midfield
+Lynryd Skynryd                   0%       0%    43%    57%  Back
+──────────────────────────────────────────────────────────────────────────────
+
+
+==============================================================================
+  [LNCT] RACE 2  —  ABBREVIATED
+==============================================================================
+Race    : 2  |  1680m  |  MS  |  11 runners
+Data coverage: 11/11 horses (100%)  — confidence: MODERATE
+
+Data warnings:
+  ! Left One Hangin: only 2 run(s) in stride_results (< 3)
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R2  (1680m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────── 1. PROBABILITY TABLE ─────────────────────────
+Horse                        Bar Driver               Win%   Plc%    Odds      SP Value   
+------------------------------------------------------------------------------------------
+Left One Hangin                6 Rohan Hillier       77.8%  99.4%    $1.3       — —       
+Klitschko Leis                10 Gareth Rattray      20.2%  89.3%    $4.9       — —       
+Harley Glenwood                2 John Walters         0.9%  43.3%  $111.1       — —       
+Hes First Class                8 Dylan Ford           0.9%  57.1%  $111.1       — —       
+King Bart                      7 Brodie Davis         0.1%   5.4%  $666.7       — —       
+Fancy Another                  1 Ricky Duggan         0.0%   0.0%       —       — —       
+Voodoo Ranger                  3 Jordan Chibnall      0.0%   5.1%       —       — —       
+Winning Brew                   4 Kayleb Williams      0.0%   0.1%       —       — —       
+Quay                           5 Todd Rattray         0.0%   0.1%       —       — —       
+Only Glory                     9 Charlie Castles      0.0%   0.1%       —       — —       
+Alby Priddy                   11 Malcom Jones         0.0%   0.1%       —       — —       
+
+─────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────
+Horse                         Lead%  OnPace%   Mid%  Back%  Most Likely
+-----------------------------------------------------------------------
+Harley Glenwood                 42%      54%     3%     0%  On Pace
+Voodoo Ranger                   21%      68%    10%     0%  On Pace
+Winning Brew                    16%      71%    13%     0%  On Pace
+Fancy Another                   10%      53%    29%     8%  On Pace
+Quay                             4%      53%    42%     2%  On Pace
+Left One Hangin                  4%      51%    44%     1%  On Pace
+King Bart                        2%      25%    71%     3%  Midfield
+Hes First Class                  1%      10%    81%     8%  Midfield
+Klitschko Leis                   1%       5%    75%    19%  Midfield
+Only Glory                       1%       6%    78%    16%  Midfield
+Alby Priddy                      0%       2%    40%    58%  Back
+──────────────────────────────────────────────────────────────────────────────
+
+
+==============================================================================
+  [LNCT] RACE 3  —  FULL DIAGNOSTIC
+==============================================================================
+Race    : 3  |  1680m  |  MS  |  11 runners
+Data coverage: 11/11 horses (100%)  — confidence: MODERATE
+
+Data warnings:
+  ! I Am Caesar: has never raced at Launceston
+  ! Away Game: returning from vet/stewards stand-down — risk flag
+
+[TRACK PROFILE] Launceston — UNVALIDATED
+──────────────────────────────────────────────────────────────────────────────
+Circumference : 1018m  |  Straight : 220m  |  Turns radius : 95m
+Surface       : Crushed granite  |  Direction : Anti-clockwise
+Distances     : 1680m, 2200m, 2698m
+Sprint lane   : False
+Leader win %  : 12.0%  (unvalidated — treat as provisional)
+
+Position multipliers:
+  leader        : 1.00x  ██████████
+  on_pace       : 1.10x  ███████████
+  midfield      : 1.00x  ██████████
+  back          : 0.40x  ████
+
+Weight overrides vs baseline:
+  (none defined — default weights apply)
+
+Start type this race : MS
+
+[TRACK PROFILE] PRE/POST MULTIPLIER — single illustrative pass (midpoint weights)
+──────────────────────────────────────────────────────────────────────────────
+Horse                   Pre-mult Position       Mult  Post-mult
+──────────────────────────────────────────────────────────────────────────────
+Paziah                    1.3887 on_pace        1.10x     1.5276
+Dancinwivjolene           1.5149 on_pace        1.10x     1.6664
+I Am Caesar               4.2118 on_pace        1.10x     4.6329
+Away Game                -3.6850 on_pace        1.10x    -4.0534
+My Mate Luke             -0.4805 on_pace        1.10x    -0.5286
+Outback Rock             -2.3605 on_pace        1.10x    -2.5966
+Captain Cheddar           3.9070 leader         1.00x     3.9070
+Miki Sanz                -2.5017 on_pace        1.10x    -2.7519
+Five Star Shark          -0.2800 midfield       1.00x    -0.2800
+Debt Till We Part         0.5400 back           0.40x     0.2160
+No Nukes Skipper         -2.2548 midfield       1.00x    -2.2548
+
+Running 2,000 simulations ...
+========================================================================
+  MONTE CARLO RACE SIMULATION — LAUNCESTON Race 3  (2,000 runs)  
+========================================================================
+
+───────────────────────── 1. PROBABILITY TABLE ─────────────────────────
+Horse                        Bar Driver               Win%   Plc%    Odds      SP Value   
+------------------------------------------------------------------------------------------
+I Am Caesar                    3 Dylan Ford          59.8%  98.4%    $1.7       — —       
+Captain Cheddar                7 Mark Yole           33.6%  96.7%    $3.0       — —       
+Paziah                         1 Todd Rattray         5.9%  85.0%   $16.8       — —       
+Dancinwivjolene                2 Charlie Castles      0.4%  16.0%  $222.2       — —       
+Debt Till We Part             10 Paul Williams        0.2%   2.9%  $500.0       — —       
+Away Game                      4 Ricky Duggan         0.0%   0.0%       —       — —       
+My Mate Luke                   5 Luke Hooper          0.0%   0.1%       —       — —       
+Outback Rock                   6 Brodie Davis         0.0%   0.1%       —       — —       
+Miki Sanz                      8 John Walters         0.0%   0.0%       —       — —       
+Five Star Shark                9 Jacob Duggan         0.0%   0.4%       —       — —       
+No Nukes Skipper              11 Gareth Rattray       0.0%   0.5%       —       — —       
+
+─────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────
+Horse                         Lead%  OnPace%   Mid%  Back%  Most Likely
+-----------------------------------------------------------------------
+Dancinwivjolene                 24%      76%     0%     0%  On Pace
+Paziah                          23%      77%     0%     0%  On Pace
+I Am Caesar                     16%      84%     0%     0%  On Pace
+Away Game                       13%      86%     1%     0%  On Pace
+Captain Cheddar                  9%      88%     2%     0%  On Pace
+Outback Rock                     7%      90%     3%     0%  On Pace
+Miki Sanz                        5%      88%     7%     0%  On Pace
+My Mate Luke                     3%      91%     6%     0%  On Pace
+Five Star Shark                  0%      17%    82%     0%  Midfield
+Debt Till We Part                0%       0%     5%    95%  Back
+No Nukes Skipper                 0%       0%    91%     9%  Midfield
+
+──────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────
+  Robust = wins >20%+ across all weight scenarios
+  Conditional = wins depend on a specific race shape
+  Fragile = win% collapses outside a narrow weight band
+
+  ROBUST        I Am Caesar                   Low-gate 61% / Mid-gate 61% / High-gate 56%
+  ROBUST        Captain Cheddar               Low-gate 32% / Mid-gate 32% / High-gate 39%
+  CONDITIONAL   Paziah                        Low-gate 6% / Mid-gate 7% / High-gate 5%
+
+──────────────────────────── 4. KEY FACTORS ────────────────────────────
+  Features ranked by discriminating power in this race:
+
+  1. 800m run-home momentum                  █████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+  2. Gate speed / early position             ███████████████████████████████████████
+  3. Class level vs field                    ██████
+  4. Form trend (improving/declining)        █████
+  5. Finishing speed (last 400m)             █████
+  6. Freshness / days since last run         ████
+
+───────────────────────── 5. ANALYST NARRATIVE ─────────────────────────
+
+Race overview: Launceston Race 3  (2026-03-22)  |  11 runners  |  1680m  |  Start: MS
+
+STANDOUT: I Am Caesar (59.8% win probability, robust selection). Projects as on pace runner at the 800m. Consistent performer across weight scenarios.
+
+MAIN DANGER: Captain Cheddar (33.6%). Likely to race on pace. ROBUST — genuine threat regardless of tempo.
+
+No horses flagged as clear value at current market prices.
+
+RACE SHAPE: Contested pace — no clear leader emerges consistently.
+
+DATA FLAGS:
+  • Away Game: returning from vet/stewards stand-down — risk flag
+  • I Am Caesar: has never raced at Launceston
+
+========================================================================
+
+
+[FORM NOTE — R3]
+  Away Game (barrier 4, Ricky Duggan): ONLY horse with real Launceston/Burnie data.
+  Won Burnie R4 (13 Mar 2026, 2180m MS) at 68% sim probability — validated.
+  Z-score distortion: scoring negatively vs 10 data-absent rivals (all features=0).
+  !! Sim result for Away Game is UNRELIABLE — manually flag as FORM PICK.
+  No Nukes Skipper NZ (barrier 11): data-limited — 210 career starts, experienced.
+  Debt Till We Part (barrier 10): 70 career starts, prolific — no Tasmanian data.
+
+==============================================================================
+  [LNCT] RACE 4  —  FULL DIAGNOSTIC
+==============================================================================
+Race    : 4  |  2698m  |  SS  |  10 runners
+Data coverage: 10/10 horses (100%)  — confidence: MODERATE
+  ! STANDING START: barrier = tab number (approximation — BP column not parsed)
+
+Data warnings:
+  ! Told You Twice: returning from vet/stewards stand-down — risk flag
+  ! Montgomery Burns: returning from vet/stewards stand-down — risk flag
+
+[TRACK PROFILE] Launceston — UNVALIDATED
+──────────────────────────────────────────────────────────────────────────────
+Circumference : 1018m  |  Straight : 220m  |  Turns radius : 95m
+Surface       : Crushed granite  |  Direction : Anti-clockwise
+Distances     : 1680m, 2200m, 2698m
+Sprint lane   : False
+Leader win %  : 12.0%  (unvalidated — treat as provisional)
+
+Position multipliers:
+  leader        : 1.00x  ██████████
+  on_pace       : 1.10x  ███████████
+  midfield      : 1.00x  ██████████
+  back          : 0.40x  ████
+
+Weight overrides vs baseline:
+  (none defined — default weights apply)
+
+Start type this race : SS
+
+[TRACK PROFILE] PRE/POST MULTIPLIER — single illustrative pass (midpoint weights)
+──────────────────────────────────────────────────────────────────────────────
+Horse                   Pre-mult Position       Mult  Post-mult
+──────────────────────────────────────────────────────────────────────────────
+Pardoe Plugga             0.3804 on_pace        1.10x     0.4184
+Told You Twice           -3.4753 on_pace        1.10x    -3.8228
+Montgomery Burns          0.4732 on_pace        1.10x     0.5205
+Keayang Fitzy             1.9717 on_pace        1.10x     2.1689
+Southern Luck            -5.6553 midfield       1.00x    -5.6553
+Vanquish Stride          -5.3705 back           0.40x    -2.1482
+Stepping Stones           1.6414 leader         1.00x     1.6414
+De Goey                   5.4763 on_pace        1.10x     6.0239
+Glenledi Elvis            3.5378 on_pace        1.10x     3.8916
+Magnetic Terror           1.0204 on_pace        1.10x     1.1224
+
+Running 2,000 simulations ...
+========================================================================
+  MONTE CARLO RACE SIMULATION — LAUNCESTON Race 4  (2,000 runs)  
+========================================================================
+
+───────────────────────── 1. PROBABILITY TABLE ─────────────────────────
+Horse                        Bar Driver               Win%   Plc%    Odds      SP Value   
+------------------------------------------------------------------------------------------
+De Goey                        8 Rohan Hillier       94.2%  99.9%    $1.1       — —       
+Glenledi Elvis                 9 Conor Crook          4.3%  90.7%   $23.0       — —       
+Keayang Fitzy                  4 Mark Yole            0.9%  64.0%  $105.3       — —       
+Stepping Stones                7 Heath Woods          0.3%  29.2%  $333.3       — —       
+Magnetic Terror               10 Jordan Chibnall      0.1%  13.1% $1000.0       — —       
+Pardoe Plugga                  1 Charlie Castles      0.1%   1.6% $2000.0       — —       
+Told You Twice                 2 Gareth Rattray       0.0%   0.0%       —       — —       
+Montgomery Burns               3 Dylan Ford           0.0%   1.5%       —       — —       
+Southern Luck                  5 Todd Rattray         0.0%   0.0%       —       — —       
+Vanquish Stride                6 Ricky Duggan         0.0%   0.0%       —       — —       
+
+─────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────
+Horse                         Lead%  OnPace%   Mid%  Back%  Most Likely
+-----------------------------------------------------------------------
+Pardoe Plugga                   24%      76%     0%     0%  On Pace
+Told You Twice                  23%      76%     0%     0%  On Pace
+Montgomery Burns                22%      77%     0%     0%  On Pace
+Keayang Fitzy                   15%      84%     1%     0%  On Pace
+Stepping Stones                  8%      83%     9%     0%  On Pace
+De Goey                          4%      76%    20%     0%  On Pace
+Magnetic Terror                  3%      58%    39%     0%  On Pace
+Glenledi Elvis                   1%      52%    47%     0%  On Pace
+Southern Luck                    0%       1%    98%     1%  Midfield
+Vanquish Stride                  0%       0%     5%    95%  Back
+
+──────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────
+  Robust = wins >20%+ across all weight scenarios
+  Conditional = wins depend on a specific race shape
+  Fragile = win% collapses outside a narrow weight band
+
+  ROBUST        De Goey                       Low-gate 93% / Mid-gate 94% / High-gate 96%
+  CONDITIONAL   Glenledi Elvis                Low-gate 7% / Mid-gate 4% / High-gate 2%
+
+──────────────────────────── 4. KEY FACTORS ────────────────────────────
+  Features ranked by discriminating power in this race:
+
+  1. 800m run-home momentum                  ████████████████████████████████████████████████████████████████
+  2. Gate speed / early position             █████████████████████████████████
+  3. Class level vs field                    ███████████████████████
+  4. Form trend (improving/declining)        ███████
+  5. Finishing speed (last 400m)             █████
+  6. Freshness / days since last run         ███
+
+───────────────────────── 5. ANALYST NARRATIVE ─────────────────────────
+
+Race overview: Launceston Race 4  (2026-03-22)  |  10 runners  |  2698m  |  Start: SS
+
+STANDOUT: De Goey (94.2% win probability, robust selection). Projects as on pace runner at the 800m. Consistent performer across weight scenarios.
+
+MAIN DANGER: Glenledi Elvis (4.3%). Likely to race on pace. CONDITIONAL — most dangerous if race develops into a on pace track.
+
+No horses flagged as clear value at current market prices.
+
+RACE SHAPE: Contested pace — no clear leader emerges consistently.
+
+DATA FLAGS:
+  • Told You Twice: returning from vet/stewards stand-down — risk flag
+  • Montgomery Burns: returning from vet/stewards stand-down — risk flag
+
+========================================================================
+
+
+[FORM NOTE — R4]
+  Easter Cup Heat 1. No horses found in dataset — ALL results are NR/barrier priors.
+  Stepping Stones / Keayang Fitzy split (34.9% / 34.4%) reflects equal prior uncertainty.
+  Vanquish Stride NZ (barrier 6, DATA LIMITED): treat as barrier prior only.
+  Heath Woods (Stepping Stones) is a dataset driver — minor driver-quality signal only.
+
+==============================================================================
+  [LNCT] RACE 5  —  ABBREVIATED
+==============================================================================
+Race    : 5  |  2200m  |  MS  |  12 runners
+Data coverage: 11/12 horses (92%)  — confidence: MODERATE
+
+Data warnings:
+  ! Racketeers Boy: not found in stride_results — no gate speed data
+  ! Racketeers Boy: not found in stride_profiles — possible mainland visitor
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R5  (2200m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────── 1. PROBABILITY TABLE ─────────────────────────
+Horse                        Bar Driver               Win%   Plc%    Odds      SP Value   
+------------------------------------------------------------------------------------------
+Mcmayhem                       2 Rohan Hillier       96.2% 100.0%    $1.0       — —       
+Lougle                         3 Conor Crook          3.7%  99.9%   $27.0       — —       
+Racketeers Boy                 9 Dylan Ford           0.1%  33.2%  $666.7       — —       
+Rocky Stride                   1 Brodie Davis         0.0%  58.9%       —       — —       
+Windy Hanover                  4 Jordan Chibnall      0.0%   0.0%       —       — —       
+Neon                           5 Ethan Arnott         0.0%   0.1%       —       — —       
+Keepers Ideal                  6 Malcom Jones         0.0%   0.0%       —       — —       
+National News                  7 Ricky Duggan         0.0%   0.2%       —       — —       
+Colby Sanz                     8 John Walters         0.0%   0.0%       —       — —       
+Dazzle Me                     10 Tiarna Ford          0.0%   0.0%       —       — —       
+Major Lester                  11 Gareth Rattray       0.0%   0.1%       —       — —       
+Rock On Playboy               12 Mark Yole            0.0%   7.6%       —       — —       
+
+─────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────
+Horse                         Lead%  OnPace%   Mid%  Back%  Most Likely
+-----------------------------------------------------------------------
+Rocky Stride                    24%      76%     0%     0%  On Pace
+Mcmayhem                        20%      79%     0%     0%  On Pace
+Lougle                          14%      85%     1%     0%  On Pace
+Keepers Ideal                    9%      86%     5%     0%  On Pace
+Neon                             8%      89%     3%     0%  On Pace
+National News                    6%      85%     9%     0%  On Pace
+Dazzle Me                        5%      71%    24%     0%  On Pace
+Windy Hanover                    5%      90%     6%     0%  On Pace
+Racketeers Boy                   4%      75%    21%     0%  On Pace
+Major Lester                     2%      62%    36%     0%  On Pace
+Rock On Playboy                  1%      51%    48%     1%  On Pace
+Colby Sanz                       0%       0%     0%   100%  Back
+──────────────────────────────────────────────────────────────────────────────
+
+
+==============================================================================
+  [LNCT] RACE 6  —  FULL DIAGNOSTIC
+==============================================================================
+Race    : 6  |  2698m  |  SS  |  9 runners
+Data coverage: 9/9 horses (100%)  — confidence: MODERATE
+  ! STANDING START: barrier = tab number (approximation — BP column not parsed)
+
+Data warnings:
+  ! Anything Goes: returning from vet/stewards stand-down — risk flag
+  ! Gordons Bay: returning from vet/stewards stand-down — risk flag
+
+[TRACK PROFILE] Launceston — UNVALIDATED
+──────────────────────────────────────────────────────────────────────────────
+Circumference : 1018m  |  Straight : 220m  |  Turns radius : 95m
+Surface       : Crushed granite  |  Direction : Anti-clockwise
+Distances     : 1680m, 2200m, 2698m
+Sprint lane   : False
+Leader win %  : 12.0%  (unvalidated — treat as provisional)
+
+Position multipliers:
+  leader        : 1.00x  ██████████
+  on_pace       : 1.10x  ███████████
+  midfield      : 1.00x  ██████████
+  back          : 0.40x  ████
+
+Weight overrides vs baseline:
+  (none defined — default weights apply)
+
+Start type this race : SS
+
+[TRACK PROFILE] PRE/POST MULTIPLIER — single illustrative pass (midpoint weights)
+──────────────────────────────────────────────────────────────────────────────
+Horse                   Pre-mult Position       Mult  Post-mult
+──────────────────────────────────────────────────────────────────────────────
+Fleetwood Rock           -1.4675 on_pace        1.10x    -1.6142
+Horatius Speculo          7.0756 on_pace        1.10x     7.7831
+Photo First               1.3289 leader         1.00x     1.3289
+Iron Clad                 0.6873 on_pace        1.10x     0.7561
+Rocks Roy                -5.6809 midfield       1.00x    -5.6809
+Anything Goes            -8.0700 midfield       1.00x    -8.0700
+The Shallows             -0.5918 on_pace        1.10x    -0.6509
+Gordons Bay              -0.3609 on_pace        1.10x    -0.3970
+Maebee                    7.0792 on_pace        1.10x     7.7872
+
+Running 2,000 simulations ...
+========================================================================
+  MONTE CARLO RACE SIMULATION — LAUNCESTON Race 6  (2,000 runs)  
+========================================================================
+
+───────────────────────── 1. PROBABILITY TABLE ─────────────────────────
+Horse                        Bar Driver               Win%   Plc%    Odds      SP Value   
+------------------------------------------------------------------------------------------
+Maebee                         9 Conor Crook         66.0% 100.0%    $1.5       — —       
+Horatius Speculo               2 Dylan Ford          34.0% 100.0%    $2.9       — —       
+Fleetwood Rock                 1 Gareth Rattray       0.0%   0.5%       —       — —       
+Photo First                    3 Jacob Duggan         0.0%  11.5%       —       — —       
+Iron Clad                      4 Mark Yole            0.0%  70.3%       —       — —       
+Rocks Roy                      5 Ricky Duggan         0.0%   0.0%       —       — —       
+Anything Goes                  6 Tiarna Ford          0.0%   0.0%       —       — —       
+The Shallows                   7 Brodie Davis         0.0%  10.5%       —       — —       
+Gordons Bay                    8 Charlie Castles      0.0%   7.2%       —       — —       
+
+─────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────
+Horse                         Lead%  OnPace%   Mid%  Back%  Most Likely
+-----------------------------------------------------------------------
+Fleetwood Rock                  25%      75%     0%     0%  On Pace
+Photo First                     25%      75%     0%     0%  On Pace
+Horatius Speculo                24%      75%     0%     0%  On Pace
+Iron Clad                       13%      86%     1%     0%  On Pace
+The Shallows                     5%      82%    13%     0%  On Pace
+Maebee                           4%      72%    24%     0%  On Pace
+Gordons Bay                      4%      77%    19%     0%  On Pace
+Rocks Roy                        0%       0%    95%     5%  Midfield
+Anything Goes                    0%       0%    76%    24%  Midfield
+
+──────────────────────── 3. ROBUSTNESS ANALYSIS ────────────────────────
+  Robust = wins >20%+ across all weight scenarios
+  Conditional = wins depend on a specific race shape
+  Fragile = win% collapses outside a narrow weight band
+
+  ROBUST        Maebee                        Low-gate 60% / Mid-gate 68% / High-gate 69%
+  ROBUST        Horatius Speculo              Low-gate 40% / Mid-gate 32% / High-gate 31%
+
+──────────────────────────── 4. KEY FACTORS ────────────────────────────
+  Features ranked by discriminating power in this race:
+
+  1. 800m run-home momentum                  █████████████████████████████████████████████████████████████████████
+  2. Class level vs field                    █████████████████████████████████████████████████
+  3. Gate speed / early position             ██████████████████████████████████████████
+  4. Form trend (improving/declining)        ██████
+  5. Freshness / days since last run         ███
+  6. Finishing speed (last 400m)             ███
+
+───────────────────────── 5. ANALYST NARRATIVE ─────────────────────────
+
+Race overview: Launceston Race 6  (2026-03-22)  |  9 runners  |  2698m  |  Start: SS
+
+STANDOUT: Maebee (66.0% win probability, robust selection). Projects as on pace runner at the 800m. Consistent performer across weight scenarios.
+
+MAIN DANGER: Horatius Speculo (34.0%). Likely to race on pace. ROBUST — genuine threat regardless of tempo.
+
+No horses flagged as clear value at current market prices.
+
+RACE SHAPE: Expected pace scenario: Fleetwood Rock likely to lead, with Maebee, Horatius Speculo, Photo First, Iron Clad, The Shallows, Gordons Bay on the pace.
+
+DATA FLAGS:
+  • Gordons Bay: returning from vet/stewards stand-down — risk flag
+  • Anything Goes: returning from vet/stewards stand-down — risk flag
+
+========================================================================
+
+
+[FORM NOTE — R6]
+  Easter Cup Heat 2. No horse stride_results found — ALL results are NR/barrier priors.
+  Triedtotellya (barrier 10, Rohan Hillier): career 18-5-25, $268k prize money.
+  Career win rate 72% (18/25) is exceptional — user flags as 'likely standout'.
+  Iron Clad (barrier 4, NR75): sim leader 76.1% reflects NR/barrier prior only.
+  Anything Goes NZ (barrier 6): DATA LIMITED — NZ form not in dataset.
+  !! Manual form pick: Triedtotellya (career record superior, self-trained driver).
+
+==============================================================================
+  [LNCT] RACE 7  —  ABBREVIATED
+==============================================================================
+Race    : 7  |  2200m  |  MS  |  12 runners
+Data coverage: 11/12 horses (92%)  — confidence: MODERATE
+  ! MAINLAND VISITOR : Keayang Lexi — mainland form only, not in dataset
+
+Data warnings:
+  ! Keayang Lexi: not found in stride_results — no gate speed data
+  ! Keayang Lexi: not found in stride_profiles — possible mainland visitor
+  ! Can Do Magic: returning from vet/stewards stand-down — risk flag
+  ! Far Left Fletch: returning from vet/stewards stand-down — risk flag
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R7  (2200m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────── 1. PROBABILITY TABLE ─────────────────────────
+Horse                        Bar Driver               Win%   Plc%    Odds      SP Value   
+------------------------------------------------------------------------------------------
+Cuzzy Junior                   1 Todd Rattray        50.3%  91.5%    $2.0       — —       
+Keayang Lexi                   3 Conor Crook         29.9%  57.6%    $3.3       — —       
+Can Do Magic                   4 Rohan Hillier        9.7%  45.1%   $10.4       — —       
+Far Left Fletch                6 Jordan Chibnall      3.1%  27.7%   $32.3       — —       
+Our Sweet Trixie               2 Brodie Davis         2.7%  32.6%   $37.0       — —       
+Grizzly Montana               13 Dylan Ford           2.0%  12.3%   $50.0       — —       
+Norbet                         8 John Walters         1.3%  19.9%   $76.9       — —       
+Cee Tee Chelsea                9 Charlie Castles      0.7%   7.0%  $142.9       — —       
+Ashante Queen                 10 Grace Jones          0.4%   6.4%  $285.7       — —       
+Kostyuk Leis                   5 Ethan Arnott         0.0%   0.0%       —       — —       
+Angelshavtime                 11 Ricky Duggan         0.0%   0.1%       —       — —       
+Jeremy Wells                  12 Gareth Rattray       0.0%   0.0%       —       — —       
+
+─────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────
+Horse                         Lead%  OnPace%   Mid%  Back%  Most Likely
+-----------------------------------------------------------------------
+Cuzzy Junior                    37%      59%     3%     0%  On Pace
+Keayang Lexi                    27%      68%     5%     0%  On Pace
+Our Sweet Trixie                23%      69%     7%     0%  On Pace
+Kostyuk Leis                     6%      64%    29%     1%  On Pace
+Far Left Fletch                  2%      33%    63%     3%  Midfield
+Norbet                           2%      29%    68%     2%  Midfield
+Cee Tee Chelsea                  1%      19%    77%     3%  Midfield
+Can Do Magic                     1%      20%    64%    15%  Midfield
+Ashante Queen                    1%      10%    83%     7%  Midfield
+Angelshavtime                    0%       4%    79%    16%  Midfield
+Jeremy Wells                     0%       3%    64%    32%  Midfield
+Grizzly Montana                  0%       2%    44%    55%  Back
+──────────────────────────────────────────────────────────────────────────────
+
+
+==============================================================================
+  [LNCT] RACE 8  —  ABBREVIATED
+==============================================================================
+Race    : 8  |  1680m  |  MS  |  10 runners
+Data coverage: 8/10 horses (80%)  — confidence: MODERATE
+  ! MAINLAND VISITOR : My Bettor Half — mainland form only, not in dataset
+
+Data warnings:
+  ! Shez All Heart: returning from vet/stewards stand-down — risk flag
+  ! My Bettor Half: not found in stride_results — no gate speed data
+  ! My Bettor Half: not found in stride_profiles — possible mainland visitor
+  ! Cmon Sharky: only 2 run(s) in stride_results (< 3)
+  ! Cmon Sharky: has never raced at Launceston
+  ! Iris Brown: not found in stride_results — no gate speed data
+  ! Iris Brown: not found in stride_profiles — possible mainland visitor
+  ! Centurian Miss: only 1 run(s) in stride_results (< 3)
+  ! Iden Regal Wave: returning from vet/stewards stand-down — risk flag
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R8  (1680m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────── 1. PROBABILITY TABLE ─────────────────────────
+Horse                        Bar Driver               Win%   Plc%    Odds      SP Value   
+------------------------------------------------------------------------------------------
+Our Willow                     6 Rohan Hillier       96.0% 100.0%    $1.0       — —       
+Cmon Sharky                    4 Dylan Ford           2.2%  88.5%   $44.4       — —       
+Rainbow Ranger                 5 Todd Rattray         1.8%  90.5%   $57.1       — —       
+Shez All Heart                 1 Kayleb Williams      0.0%   1.7%       —       — —       
+My Bettor Half                 2 —                    0.0%   0.0%       —       — —       
+What A Woman                   3 Jordan Chibnall      0.0%   9.0%       —       — —       
+Iris Brown                     7 Mark Yole            0.0%   9.3%       —       — —       
+Centurian Miss                 8 Brodie Davis         0.0%   0.9%       —       — —       
+Muzzame Mate                   9 Charlie Castles      0.0%   0.1%       —       — —       
+Iden Regal Wave               10 Luke Hooper          0.0%   0.0%       —       — —       
+
+─────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────
+Horse                         Lead%  OnPace%   Mid%  Back%  Most Likely
+-----------------------------------------------------------------------
+My Bettor Half                  24%      76%     0%     0%  On Pace
+Shez All Heart                  18%      82%     0%     0%  On Pace
+What A Woman                    16%      84%     0%     0%  On Pace
+Rainbow Ranger                  12%      88%     1%     0%  On Pace
+Iris Brown                       9%      88%     3%     0%  On Pace
+Cmon Sharky                      7%      92%     1%     0%  On Pace
+Centurian Miss                   7%      86%     7%     0%  On Pace
+Our Willow                       5%      92%     3%     0%  On Pace
+Muzzame Mate                     2%      80%    18%     0%  On Pace
+Iden Regal Wave                  0%       0%     0%   100%  Back
+──────────────────────────────────────────────────────────────────────────────
+
+
+==============================================================================
+  [LNCT] RACE 9  —  ABBREVIATED
+==============================================================================
+Race    : 9  |  1680m  |  MS  |  11 runners
+Data coverage: 10/11 horses (91%)  — confidence: MODERATE
+
+Data warnings:
+  ! Mary Mourne: only 2 run(s) in stride_results (< 3)
+  ! Mary Mourne: has never raced at Launceston
+  ! Tambros Tilly: not found in stride_results — no gate speed data
+  ! Tambros Tilly: not found in stride_profiles — possible mainland visitor
+
+Running 2,000 simulations ...
+
+──────────────────────────────────────────────────────────────────────────────
+  MONTE CARLO — LAUNCESTON R9  (1680m MS)  [2,000 runs]  [LNCT]
+──────────────────────────────────────────────────────────────────────────────
+───────────────────────── 1. PROBABILITY TABLE ─────────────────────────
+Horse                        Bar Driver               Win%   Plc%    Odds      SP Value   
+------------------------------------------------------------------------------------------
+Moveslikealady                 5 Rohan Hillier       88.3%  99.9%    $1.1       — —       
+Puntarno Stride                3 Mark Yole           10.2%  91.0%    $9.9       — —       
+Rollwitharty                  10 Dylan Ford           1.1%  64.1%   $90.9       — —       
+Mary Mourne                    1 Jordan Chibnall      0.4%  44.2%  $222.2       — —       
+Coolandcollect                 2 Gareth Rattray       0.0%   0.0%       —       — —       
+Hay Miki                       4 Grace Jones          0.0%   0.3%       —       — —       
+Stir Me Up                     7 Jacob Duggan         0.0%   0.1%       —       — —       
+Likeable Rogue                 8 Todd Rattray         0.0%   0.0%       —       — —       
+Can Feel The Fury              9 Ricky Duggan         0.0%   0.0%       —       — —       
+Tambros Tilly                 11 Brodie Davis         0.0%   0.4%       —       — —       
+Sokys Line                    12 Kayleb Williams      0.0%   0.0%       —       — —       
+
+─────────────── 2. SPEED MAP  (Probability Cloud @ 800m) ───────────────
+Horse                         Lead%  OnPace%   Mid%  Back%  Most Likely
+-----------------------------------------------------------------------
+Mary Mourne                     34%      66%     0%     0%  On Pace
+Puntarno Stride                 19%      79%     2%     0%  On Pace
+Hay Miki                        17%      81%     2%     0%  On Pace
+Moveslikealady                  11%      85%     3%     0%  On Pace
+Likeable Rogue                   5%      71%    24%     0%  On Pace
+Rollwitharty                     4%      60%    35%     0%  On Pace
+Stir Me Up                       4%      69%    27%     0%  On Pace
+Can Feel The Fury                3%      57%    39%     0%  On Pace
+Tambros Tilly                    2%      54%    43%     1%  On Pace
+Sokys Line                       0%      21%    66%    13%  Midfield
+Coolandcollect                   0%       0%     7%    93%  Back
+──────────────────────────────────────────────────────────────────────────────
+
+
+
+==============================================================================
+  RACE NIGHT SUMMARY — LAUNCESTON 22 MARCH 2026
+==============================================================================
+  [LNCT] UNVALIDATED TRACK — treat all outputs as directional, not definitive
+  No SP data available — implied odds computed from sim win%; compare vs TAB
+
+  Confidence legend: PRIOR=barrier/NR priors only | LOW=1-2 horses w/data | MOD=partial data
+
+R    Dist ST  Conf       Sim Pick (!)            Win% Main Danger            Dngr%
+──────────────────────────────────────────────────────────────────────────────
+R1    2200m MS   9/9 MODERATE  Enjoy Life             67.7%  Another Nien           29.1%
+R2    1680m MS   11/11 MODERATE  Left One Hangin        77.8%  Klitschko Leis         20.2%
+R3 *  1680m MS   11/11 MODERATE  I Am Caesar            59.8%  Captain Cheddar        33.6%
+R4 *  2698m SS   10/10 MODERATE  De Goey                94.2%  Glenledi Elvis          4.3%
+R5    2200m MS   11/12 MODERATE  Mcmayhem               96.2%  Lougle                  3.7%
+R6 *  2698m SS   9/9 MODERATE  Maebee                 66.0%  Horatius Speculo       34.0%
+R7    2200m MS   11/12 MODERATE  Cuzzy Junior           50.3%  Keayang Lexi           29.9%
+R8    1680m MS   8/10 MODERATE  Our Willow             96.0%  Cmon Sharky             2.2%
+R9    1680m MS   10/11 MODERATE  Moveslikealady         88.3%  Puntarno Stride        10.2%
+
+  * = Priority race (full diagnostic)  | (!) = sim pick, NOT a manual form recommendation
+
+VALUE / MANUAL FLAGS (where sim is overridden by form knowledge):
+  R3: Away Game (barrier 4) — MANUAL FORM PICK. Only real-data horse in field.
+       Sim shows Paziah leading (barrier prior). Away Game won Burnie R4 9 days ago.
+  R6: Triedtotellya — SCRATCHED. Manual form pick no longer applies.
+
+NOTES PER RACE:
+  R3: Priority race — pre/post multiplier table included above
+  R4: Standing start — barrier approx (tab used as proxy for BP) | Priority race — pre/post multiplier table included above
+  R6: Standing start — barrier approx (tab used as proxy for BP) | Priority race — pre/post multiplier table included above
+  R7: ! MAINLAND VISITOR : Keayang Lexi — mainland form only, not in dataset
+  R8: ! MAINLAND VISITOR : My Bettor Half — mainland form only, not in dataset
+
+==============================================================================
+  END OF SIMULATION — LAUNCESTON 22 MARCH 2026
+  Track profile: Launceston (unvalidated)  |  2,000 runs per race
+==============================================================================

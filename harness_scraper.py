@@ -1261,7 +1261,9 @@ MEETS = [
     ("Carrick",     "2026-03-08", None),
     ("Burnie",      "2026-03-13", None),
     ("Hobart",      "2026-03-15", None),
-    ("Hobart",      "2026-03-18", None),  # stewards not yet released
+    ("Hobart",      "2026-03-18", None),
+    ("Launceston",  "2026-03-22", None),
+    ("Hobart",      "2026-03-25", None),
 ]
 
 

@@ -152,62 +152,62 @@ def _section_probability_table(
 # Section 2: Speed Map
 # ---------------------------------------------------------------------------
 
+def _fmt_bucket(pp: Dict[str, float]) -> str:
+    """Format a position bucket dict into 4 compact percentage columns."""
+    return (f"{pp.get('leader',0)*100:>4.0f}% {pp.get('on_pace',0)*100:>4.0f}% "
+            f"{pp.get('midfield',0)*100:>4.0f}% {pp.get('back',0)*100:>4.0f}%")
+
+
 def _section_speed_map(results: Dict, race_info: RaceInfo):
     runner_map = {r.slug: r for r in race_info.runners}
     pace_pct = results['pace_pct']
-    win_pct = results['win_pct']
+    mid_pct  = results.get('mid_pct', {})
+    win_pct  = results['win_pct']
+    place_pct = results['place_pct']
 
     # Sort by leader probability descending
     sorted_slugs = sorted(pace_pct.keys(), key=lambda s: -pace_pct[s].get('leader', 0))
 
-    _rule("2. SPEED MAP  (Probability Cloud @ 800m)")
+    _rule("2. RACE POSITIONING  (Phase 1 → 2 → 3)")
 
-    if _RICH:
-        table = Table(box=box.SIMPLE_HEAD)
-        table.add_column("Horse", min_width=24)
-        table.add_column("Lead %", justify="right")
-        table.add_column("On Pace %", justify="right")
-        table.add_column("Midfield %", justify="right")
-        table.add_column("Back %", justify="right")
-        table.add_column("Most Likely Spot", justify="left")
+    # Header
+    print(f"{'':28}  ── Phase 1 (800m) ──  ── Phase 2 (400m) ──  ── Phase 3 (Finish) ──")
+    header = (f"{'Horse':<28}  {'Lead':>4} {'Pace':>4} {'Mid':>5} {'Back':>4}"
+              f"  {'Lead':>4} {'Pace':>4} {'Mid':>5} {'Back':>4}"
+              f"  {'Win%':>6} {'Plc%':>6}")
+    print(header)
+    print("-" * len(header))
 
-        for slug in sorted_slugs:
+    for slug in sorted_slugs:
+        r = runner_map.get(slug)
+        if not r:
+            continue
+        p1 = _fmt_bucket(pace_pct[slug])
+        p2 = _fmt_bucket(mid_pct[slug]) if slug in mid_pct else "   —    —    —    —"
+        w = win_pct.get(slug, 0)
+        p = place_pct.get(slug, 0)
+        print(f"{r.horse:<28}  {p1}  {p2}  {w*100:>5.1f}% {p*100:>5.1f}%")
+
+    # Positional Probability Table (top-3 tracking)
+    p1t3 = results.get('phase1_top3_pct', {})
+    p2t3 = results.get('phase2_top3_pct', {})
+    if p1t3:
+        print()
+        _rule("   POSITIONAL PROBABILITY TABLE")
+        sorted_by_win = sorted(win_pct.keys(), key=lambda s: -win_pct.get(s, 0))
+        header2 = f"{'Horse':<28} {'800m Lead':>9} {'800m Top3':>9} {'400m Lead':>9} {'400m Top3':>9} {'Win%':>6}"
+        print(header2)
+        print("-" * len(header2))
+        for slug in sorted_by_win:
             r = runner_map.get(slug)
             if not r:
                 continue
-            pp = pace_pct[slug]
-            lead = pp.get('leader', 0)
-            on_p = pp.get('on_pace', 0)
-            mid = pp.get('midfield', 0)
-            back = pp.get('back', 0)
-            most_likely = max(pp, key=pp.get).replace('_', ' ').title()
-            table.add_row(
-                r.horse,
-                f"{lead * 100:.0f}%",
-                f"{on_p * 100:.0f}%",
-                f"{mid * 100:.0f}%",
-                f"{back * 100:.0f}%",
-                most_likely,
-            )
-        console.print(table)
-    else:
-        header = f"{'Horse':<28} {'Lead%':>6} {'OnPace%':>8} {'Mid%':>6} {'Back%':>6}  Most Likely"
-        print(header)
-        print("-" * len(header))
-        for slug in sorted_slugs:
-            r = runner_map.get(slug)
-            if not r:
-                continue
-            pp = pace_pct[slug]
-            lead = pp.get('leader', 0)
-            on_p = pp.get('on_pace', 0)
-            mid = pp.get('midfield', 0)
-            back = pp.get('back', 0)
-            most_likely = max(pp, key=pp.get).replace('_', ' ').title()
-            print(
-                f"{r.horse:<28} {lead * 100:>5.0f}% {on_p * 100:>7.0f}% "
-                f"{mid * 100:>5.0f}% {back * 100:>5.0f}%  {most_likely}"
-            )
+            lead_800 = pace_pct[slug].get('leader', 0) if slug in pace_pct else 0
+            t3_800 = p1t3.get(slug, 0)
+            lead_400 = mid_pct[slug].get('leader', 0) if slug in mid_pct else 0
+            t3_400 = p2t3.get(slug, 0)
+            w = win_pct.get(slug, 0)
+            print(f"{r.horse:<28} {lead_800*100:>8.1f}% {t3_800*100:>8.1f}% {lead_400*100:>8.1f}% {t3_400*100:>8.1f}% {w*100:>5.1f}%")
 
 
 # ---------------------------------------------------------------------------

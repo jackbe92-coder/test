@@ -12,7 +12,10 @@
       "Bash(done)",
       "Bash(python launceston_22march2026_sim.py)",
       "Bash(python Sim/launceston_22march2026_sim.py)",
-      "Bash(python test_fields_parser.py)"
+      "Bash(python test_fields_parser.py)",
+      "Bash(python Sim/race_sim.py --form \"Form PDFs/Launceston22032026.txt\" --race 1 --track Launceston --data output/claude_data)",
+      "Bash(wc -l output/claude_data/*.csv)",
+      "Bash(ls -la output/claude_data/*.csv)"
     ],
     "defaultMode": "bypassPermissions"
   }

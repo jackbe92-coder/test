@@ -22,6 +22,8 @@ WEIGHT_RANGES = {
     'w_trainer':         (0.3, 1.2),   # trainer stable form (#26)
     'w_track_condition': (0.2, 1.2),   # track condition match (#33)
     'w_driver_class':    (0.2, 1.0),   # driver group/black-type experience (#29)
+    'w_gate_behaviour':  (0.02, 0.08), # gate behaviour from stewards notes (negative only)
+    'w_head_to_head':    (0.02, 0.08), # head-to-head win rate vs tonight's field
 }
 
 # ---------------------------------------------------------------------------
@@ -111,6 +113,9 @@ DRIVER_COMBO_MIN_RUNS = 3
 CONSISTENCY_LOOKBACK = 10         # last N runs for stdev of finish positions
 SP_PERFORMANCE_LOOKBACK = 10      # last N runs for SP vs actual performance
 DISTANCE_MATCH_WINDOW_M = 100     # ±metres from today's distance for match
+STANDING_ADJACENT_WINDOW_M = 500  # adjacent distance window for SS credit
+STANDING_ADJACENT_DAYS = 21       # max days ago for adjacent distance runs
+STANDING_ADJACENT_CREDIT = 0.65   # 65% of full score for adjacent distance
 DISTANCE_MIN_RUNS = 3             # min runs at that distance to apply rate
 START_TYPE_MIN_RUNS = 3           # min runs in same start type
 TRACK_CONDITION_MIN_RUNS = 3      # min runs in same condition
@@ -165,6 +170,10 @@ RECENCY_HALF_LIFE_DAYS = 60
 # Data quality
 MIN_DATA_CONFIDENCE = 0.4   # warn below this
 MAX_WIN_PCT_SINGLE_HORSE = 0.75  # flag if any horse exceeds 75% in a field of 8+
+MAX_WIN_PCT = 0.75    # hard cap for win probability redistribution
+MAX_PLACE_PCT = 0.95  # hard cap for place probability redistribution
+THIN_DATA_THRESHOLD = 0.3  # confidence below this triggers regression-to-mean blending
+VENUE_RATE_HALF_LIFE_DAYS = 90  # recency decay half-life for venue win/place rates
 
 # DLW (Days since Last Win) decay multiplier table
 # Interpolate between breakpoints. Beyond 400 → 0.30.

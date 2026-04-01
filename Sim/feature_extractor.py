@@ -73,19 +73,25 @@ class DataLoader:
 
     def _load_all(self):
         self.stride_results = self._load('stride_results.csv')
+        if len(self.stride_results) < 1000:
+            raise RuntimeError(
+                "ABORT: stride_results.csv contains fewer than 1000 rows — "
+                "possible synthetic data. Restore from backup before running sim."
+            )
         self.stride_profiles = self._load('stride_profiles.csv')
         self.drivers_profile = self._load('drivers_profile.csv')
         self.driver_results = self._load('driver_results_recent.csv')
         self.stewards_notes = self._load('stewards_notes.csv')
         self.stewards_stand_downs = self._load('stewards_stand_downs.csv')
         self.stewards_penalties = self._load('stewards_penalties.csv')
+        self.stewards_horse_actions = self._load('stewards_horse_actions.csv')
         self.dividends = self._load('dividends.csv')
         self.trainer_results = self._load('trainer_results_recent.csv')
 
         # Normalise date columns
         for df_name in ('stride_results', 'stewards_notes', 'stewards_stand_downs',
-                        'stewards_penalties', 'driver_results', 'dividends',
-                        'trainer_results'):
+                        'stewards_penalties', 'stewards_horse_actions',
+                        'driver_results', 'dividends', 'trainer_results'):
             df = getattr(self, df_name)
             if not df.empty and 'Date' in df.columns:
                 df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
@@ -253,6 +259,22 @@ def _profile_row(runner: Runner, profiles: pd.DataFrame) -> Optional[pd.Series]:
     return rows.iloc[0] if not rows.empty else None
 
 
+def _resolve_trainer_name(runner: Runner, stride_results: pd.DataFrame) -> str:
+    """Resolve trainer initials from form to full name via stride_results.
+
+    The fields document uses initials+surname format (e.g. 'W J Yole') but all
+    datasets store full names (e.g. 'Wayne Yole').  Look up the horse's own
+    recent runs in stride_results to get the canonical full trainer name.
+    Falls back to runner.trainer (the raw initials string) if no history found.
+    """
+    runs = _recent_runs(runner, stride_results, 5)
+    if not runs.empty and 'Trainer' in runs.columns:
+        name = runs['Trainer'].dropna().iloc[0] if not runs['Trainer'].dropna().empty else None
+        if name and str(name).strip():
+            return str(name).strip()
+    return runner.trainer or ''
+
+
 def _safe_float(val, default: float = np.nan) -> float:
     try:
         f = float(val)
@@ -278,6 +300,77 @@ def _parse_sp(val) -> Optional[float]:
 # ---------------------------------------------------------------------------
 # Individual feature functions
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Gate behaviour from stewards notes (negative flags only)
+# ---------------------------------------------------------------------------
+
+_GATE_TIER1 = ('galloped at start', 'excluded from draw mobile',
+               'stood flat footed', 'reared at the start', 'caused false start')
+_GATE_TIER2 = ('began badly', 'out of position at the start', 'slow to begin',
+               'out of position at start', 'swung sideways at the start')
+_GATE_TIER3 = ('last chance in the draw', 'last chance in draw', 'placed on its last chance')
+
+
+def compute_gate_behaviour_stewards(
+    runner: Runner,
+    stewards_notes: pd.DataFrame,
+    race_date: str,
+    lookback_days: int = 90,
+) -> Tuple[float, List[str]]:
+    """Derive gate behaviour modifier from stewards notes.
+
+    Returns float: 0.0 (neutral/no data) to -1.0 (severe gate problem).
+    Weight by recency: decay with half_life = 45 days. Cap at -1.0.
+    """
+    warnings = []
+    if stewards_notes.empty:
+        return 0.0, warnings
+
+    slug, slug_nz, name_norm, name_norm_nz = _horse_lookup_keys(runner)
+    if 'Horse_Slug' in stewards_notes.columns:
+        slug_col = stewards_notes['Horse_Slug'].str.lower().str.strip()
+        mask = slug_col == slug
+        if not mask.any() and slug_nz != slug:
+            mask = slug_col == slug_nz
+        if not mask.any():
+            slug_bare = slug[:-3] if slug.endswith('-nz') else slug
+            if slug_bare != slug:
+                mask = slug_col == slug_bare
+    else:
+        horse_col = stewards_notes['Horse'].str.lower().str.strip()
+        mask = horse_col == name_norm
+        if not mask.any() and name_norm_nz != name_norm:
+            mask = horse_col == name_norm_nz
+
+    notes_df = stewards_notes[mask].copy()
+    if notes_df.empty:
+        return 0.0, warnings
+
+    try:
+        ref = pd.Timestamp(race_date) if race_date else pd.Timestamp.today()
+    except Exception:
+        ref = pd.Timestamp.today()
+
+    if 'Date' in notes_df.columns:
+        cutoff = ref - pd.Timedelta(days=lookback_days)
+        notes_df = notes_df[notes_df['Date'].notna() & (notes_df['Date'] >= cutoff) & (notes_df['Date'] <= ref)]
+
+    score = 0.0
+    for _, row in notes_df.iterrows():
+        note = str(row.get('Note', '')).lower()
+        days_ago = (ref - row['Date']).days if 'Date' in row.index and pd.notna(row['Date']) else 0
+        weight = decay_weight(max(0, days_ago), 45.0)
+
+        if any(kw in note for kw in _GATE_TIER1):
+            score -= 0.8 * weight
+        elif any(kw in note for kw in _GATE_TIER2):
+            score -= 0.4 * weight
+        elif any(kw in note for kw in _GATE_TIER3):
+            score -= 0.2 * weight
+
+    return max(score, -1.0), warnings
+
 
 def compute_gate_speed(runner: Runner, stride_results: pd.DataFrame) -> Tuple[float, List[str]]:
     """Avg metres behind leader at 800m (800_Margin_m), negated so higher = closer to leader (better).
@@ -350,13 +443,32 @@ def compute_barrier_score(runner: Runner, track: str, start_type: str) -> Tuple[
     return score, warnings
 
 
+def _decay_weighted_rate(src: pd.DataFrame, ref_date=None) -> float:
+    """Compute decay-weighted win rate from a DataFrame with Date and Place columns."""
+    from sim_config import VENUE_RATE_HALF_LIFE_DAYS
+    places = pd.to_numeric(src['Place'], errors='coerce')
+    is_win = (places == 1).astype(float)
+
+    if ref_date is not None and 'Date' in src.columns:
+        days_ago = (ref_date - src['Date']).dt.days.clip(lower=0)
+        weights = days_ago.apply(lambda d: decay_weight(d, VENUE_RATE_HALF_LIFE_DAYS))
+        total_w = weights.sum()
+        if total_w > 0:
+            return float((is_win * weights).sum() / total_w)
+
+    # Fallback: simple rate
+    total = len(src)
+    return float(is_win.sum() / total) if total > 0 else 0.0
+
+
 def compute_driver_venue_rate(
     runner: Runner,
     driver_results: pd.DataFrame,
     track: str,
     stride_results: pd.DataFrame | None = None,
+    race_date: str = '',
 ) -> Tuple[float, List[str]]:
-    """Driver win% at this specific track.
+    """Driver win% at this specific track with recency decay.
 
     Priority:
       1. driver_results_recent.csv (recent, small)
@@ -367,6 +479,10 @@ def compute_driver_venue_rate(
         return 0.0, warnings
 
     driver_lower = runner.driver.lower().strip()
+    try:
+        ref = pd.Timestamp(race_date) if race_date else None
+    except Exception:
+        ref = None
 
     # --- 1. Try driver_results_recent ---
     if not driver_results.empty and '_driver_name' in driver_results.columns:
@@ -374,9 +490,7 @@ def compute_driver_venue_rate(
         if not driver_df.empty:
             venue_df = driver_df[driver_df['Track'].str.lower().str.strip() == track.lower()]
             src = venue_df if not venue_df.empty else driver_df
-            total = len(src)
-            wins = (pd.to_numeric(src['Place'], errors='coerce') == 1).sum()
-            return float(wins / total) if total > 0 else 0.0, warnings
+            return _decay_weighted_rate(src, ref), warnings
 
     # --- 2. Fall back to stride_results — check Driver then Trainer columns ---
     if stride_results is not None and not stride_results.empty:
@@ -388,9 +502,7 @@ def compute_driver_venue_rate(
             if not matched.empty:
                 venue_df = matched[matched['Track'].str.lower().str.strip() == track.lower()]
                 src = venue_df if not venue_df.empty else matched
-                total = len(src)
-                wins = (pd.to_numeric(src['Place'], errors='coerce') == 1).sum()
-                return float(wins / total) if total > 0 else 0.0, warnings
+                return _decay_weighted_rate(src, ref), warnings
 
     warnings.append(f"Driver {runner.driver!r}: no results found in any dataset")
     return 0.0, warnings
@@ -576,6 +688,153 @@ def compute_injury_return(
             return INJURY_RETURN_PENALTY, warnings
 
     return 0.0, warnings
+
+
+# ---------------------------------------------------------------------------
+# ODM/ODS/RODS from stewards_horse_actions
+# ---------------------------------------------------------------------------
+
+_ODM_KEYWORDS = ('odm', 'out of draw mobile', 'excluded from draw mobile')
+_ODS_KEYWORDS = ('ods', 'out of draw standing', 'excluded from draw standing')
+_RODS_KEYWORDS = ('rods',)
+_REINSTATE_KEYWORDS = ('reinstated', 'back in draw')
+
+
+def compute_odm_status(
+    runner: Runner,
+    horse_actions: pd.DataFrame,
+    race_date: str,
+) -> Tuple[dict, List[str]]:
+    """Determine current ODM/ODS status from stewards_horse_actions.csv.
+
+    Returns dict with keys: odm_mobile, odm_standing, is_rods, odm_penalty_multiplier
+    Plus warnings list.
+    """
+    # Fields doc flags as default (fallback if horse not in actions DB)
+    fields_odm = getattr(runner, 'odm_mobile', False)
+    fields_ods = getattr(runner, 'odm_standing', False)
+
+    result = {
+        'odm_mobile': False,
+        'odm_standing': False,
+        'is_rods': False,
+        'odm_penalty_multiplier': 1.0,
+    }
+    warnings = []
+
+    if horse_actions.empty or 'Action' not in horse_actions.columns:
+        # No horse_actions data — fall back to fields doc flags
+        if fields_odm:
+            result['odm_mobile'] = True
+            result['odm_penalty_multiplier'] = 0.3
+        if fields_ods:
+            result['odm_standing'] = True
+            result['odm_penalty_multiplier'] = 0.3
+        if result['odm_mobile'] or result['odm_standing']:
+            warnings.append(f"{runner.horse}: ODM/ODS flag from fields document (no horse_actions data)")
+        return result, warnings
+
+    slug, slug_nz, name_norm, name_norm_nz = _horse_lookup_keys(runner)
+    # Also try without -nz suffix (CSV may omit country code)
+    slug_bare = slug[:-3] if slug.endswith('-nz') else slug
+
+    # Match by Horse_Slug
+    if 'Horse_Slug' in horse_actions.columns:
+        slug_col = horse_actions['Horse_Slug'].str.lower().str.strip()
+        mask = slug_col == slug
+        if not mask.any() and slug_nz != slug:
+            mask = slug_col == slug_nz
+        if not mask.any() and slug_bare != slug:
+            mask = slug_col == slug_bare
+    elif 'Horse' in horse_actions.columns:
+        horse_col = horse_actions['Horse'].str.lower().str.strip()
+        mask = horse_col == name_norm
+        if not mask.any() and name_norm_nz != name_norm:
+            mask = horse_col == name_norm_nz
+    else:
+        return result, warnings
+
+    actions_df = horse_actions[mask].copy()
+    if actions_df.empty:
+        # Horse not in actions DB — fall back to fields doc flags
+        if fields_odm:
+            result['odm_mobile'] = True
+            result['odm_penalty_multiplier'] = 0.3
+        if fields_ods:
+            result['odm_standing'] = True
+            result['odm_penalty_multiplier'] = 0.3
+        return result, warnings
+
+    # Filter to actions before race_date and sort by date descending
+    try:
+        ref = pd.Timestamp(race_date) if race_date else pd.Timestamp.today()
+    except Exception:
+        ref = pd.Timestamp.today()
+
+    if 'Date' in actions_df.columns:
+        actions_df = actions_df[actions_df['Date'].notna() & (actions_df['Date'] <= ref)]
+        actions_df = actions_df.sort_values('Date', ascending=False)
+
+    # Walk through actions from most recent — first relevant action wins
+    ODM_EXPIRY_DAYS = 30  # If exclusion older than this and horse is nominated, treat as expired
+    for _, row in actions_df.iterrows():
+        action = str(row.get('Action', '')).lower()
+
+        # Check reinstatement first
+        if any(kw in action for kw in _REINSTATE_KEYWORDS):
+            # Reinstated — clears all flags (overrides even fields doc flags)
+            result = {'odm_mobile': False, 'odm_standing': False,
+                      'is_rods': False, 'odm_penalty_multiplier': 1.0,
+                      '_authoritative': True}
+            return result, warnings
+
+        # For exclusion actions, check age — if >30 days old and horse is
+        # nominated (present in fields doc), the exclusion was likely lifted
+        # but reinstatement not recorded in our data
+        action_date = row.get('Date')
+        is_old = False
+        if action_date is not None and not pd.isna(action_date):
+            try:
+                days_ago = (ref - pd.Timestamp(action_date)).days
+                is_old = days_ago > ODM_EXPIRY_DAYS
+            except Exception:
+                pass
+
+        # Check RODS before ODS (RODS contains ODS-like text)
+        if any(kw in action for kw in _RODS_KEYWORDS):
+            if is_old:
+                warnings.append(f"{runner.horse}: RODS from {days_ago}d ago — expired (nominated to race)")
+                result['_authoritative'] = True
+                return result, warnings
+            result['odm_standing'] = True
+            result['is_rods'] = True
+            result['odm_penalty_multiplier'] = 0.5
+            warnings.append(f"{runner.horse}: RODS (restricted ODS) from horse actions — 0.5x multiplier")
+            return result, warnings
+
+        # Check ODM
+        if any(kw in action for kw in _ODM_KEYWORDS):
+            if is_old:
+                warnings.append(f"{runner.horse}: ODM from {days_ago}d ago — expired (nominated to race)")
+                result['_authoritative'] = True
+                return result, warnings
+            result['odm_mobile'] = True
+            result['odm_penalty_multiplier'] = 0.3
+            warnings.append(f"{runner.horse}: ODM from horse actions — 0.3x multiplier")
+            return result, warnings
+
+        # Check ODS
+        if any(kw in action for kw in _ODS_KEYWORDS):
+            if is_old:
+                warnings.append(f"{runner.horse}: ODS from {days_ago}d ago — expired (nominated to race)")
+                result['_authoritative'] = True
+                return result, warnings
+            result['odm_standing'] = True
+            result['odm_penalty_multiplier'] = 0.3
+            warnings.append(f"{runner.horse}: ODS from horse actions — 0.3x multiplier")
+            return result, warnings
+
+    return result, warnings
 
 
 # ---------------------------------------------------------------------------
@@ -795,6 +1054,15 @@ def compute_driver_horse_combo(
 # Feature 32 — Driver suspension check (boolean score)
 # ---------------------------------------------------------------------------
 
+def _normalise_penalty_person(person_str: str) -> str:
+    """Normalise penalty Person field: '1 Smith, Geoffrey' → 'Geoffrey Smith'."""
+    s = re.sub(r'^\d+\s+', '', person_str.strip())
+    if ',' in s:
+        parts = s.split(',', 1)
+        return f"{parts[1].strip()} {parts[0].strip()}"
+    return s
+
+
 def compute_driver_suspended(
     runner: Runner,
     stewards_penalties: pd.DataFrame,
@@ -822,14 +1090,19 @@ def compute_driver_suspended(
     ]
 
     for _, row in relevant.iterrows():
-        person = str(row.get('Person', '')).lower()
-        detail = str(row.get('Detail', '')).upper()
-        type_  = str(row.get('Type',   '')).upper()
-        if driver_lower in person and any(kw in detail or kw in type_ for kw in SUSPENSION_KEYWORDS):
+        type_ = str(row.get('Type', '')).upper().strip()
+        if type_ != 'SUSPENSION':
+            continue
+        person_raw = str(row.get('Person', ''))
+        person_norm = _normalise_penalty_person(person_raw).lower()
+        if person_norm == driver_lower:
+            # Driver is listed in the fields document — if they're driving,
+            # the suspension has been served. Only warn, don't penalise.
             warnings.append(
-                f"Driver {runner.driver!r}: active suspension — substitute driver likely"
+                f"Driver {runner.driver!r}: recent suspension ({person_raw}) — "
+                f"listed to drive (suspension served)"
             )
-            return -1.0, warnings
+            return 0.0, warnings
 
     return 0.0, warnings
 
@@ -893,10 +1166,12 @@ def compute_sp_vs_performance(
 # ---------------------------------------------------------------------------
 
 def compute_distance_suitability(
-    runner: Runner, stride_results: pd.DataFrame, race_distance_m: int
+    runner: Runner, stride_results: pd.DataFrame, race_distance_m: int,
+    start_type: str = 'MS', race_date: str = '',
 ) -> Tuple[float, List[str]]:
     """#18 — Win/place rate in runs within ±DISTANCE_MATCH_WINDOW_M of today's distance.
     Confidence-weighted blend with overall place rate.
+    For standing starts: also credits recent competitive runs at adjacent distances.
     """
     warnings = []
     if not race_distance_m or 'Distance_m' not in stride_results.columns:
@@ -920,12 +1195,34 @@ def compute_distance_suitability(
     )
 
     if n < DISTANCE_MIN_RUNS:
-        return overall_rate * 0.5, warnings  # weak prior — no distance data
+        base_score = overall_rate * 0.5  # weak prior — no distance data
+    else:
+        wins_places = (pd.to_numeric(matched['Place'], errors='coerce') <= 3).sum()
+        rate = float(wins_places / n)
+        conf = _confidence_weight(n)
+        base_score = conf * rate + (1.0 - conf) * overall_rate
 
-    wins_places = (pd.to_numeric(matched['Place'], errors='coerce') <= 3).sum()
-    rate = float(wins_places / n)
-    conf = _confidence_weight(n)
-    return conf * rate + (1.0 - conf) * overall_rate, warnings
+    # Standing start adjacent distance credit
+    if start_type == 'SS' and race_date:
+        from sim_config import STANDING_ADJACENT_WINDOW_M, STANDING_ADJACENT_DAYS, STANDING_ADJACENT_CREDIT
+        try:
+            race_dt = pd.to_datetime(race_date)
+            adj_runs = runs[
+                (abs(dist_num - d) <= STANDING_ADJACENT_WINDOW_M) &
+                (abs(dist_num - d) > DISTANCE_MATCH_WINDOW_M) &  # not exact match
+                ((race_dt - runs['Date']).dt.days <= STANDING_ADJACENT_DAYS) &
+                ((race_dt - runs['Date']).dt.days >= 0)
+            ]
+            if not adj_runs.empty:
+                adj_place_rate = (
+                    pd.to_numeric(adj_runs['Place'], errors='coerce') <= 3
+                ).mean()
+                adj_score = float(adj_place_rate) * STANDING_ADJACENT_CREDIT
+                base_score = max(base_score, adj_score)
+        except Exception:
+            pass
+
+    return base_score, warnings
 
 
 # ---------------------------------------------------------------------------
@@ -978,7 +1275,8 @@ def compute_trainer_form(
     >30% = stable firing; <10% = cold spell.
     """
     warnings = []
-    trainer_name = runner.trainer if hasattr(runner, 'trainer') and runner.trainer else ''
+    # Resolve initials (e.g. 'W J Yole') to full name (e.g. 'Wayne Yole') via stride_results
+    trainer_name = _resolve_trainer_name(runner, stride_results)
     if not trainer_name:
         # Fallback: driver might be the trainer
         trainer_name = runner.driver or ''
@@ -1240,6 +1538,23 @@ def compute_days_since_last_win(
         return 0.0, warnings
     score = 1.0 - (days / WIN_DROUGHT_WARN_DAYS)
     return float(np.clip(score, -1.0, 1.0)), warnings
+
+
+def _get_raw_dlw_days(runner: Runner, stride_profiles: pd.DataFrame, race_date: str) -> float:
+    """Return raw days since last win (positive integer). 0 if never won or no data."""
+    profile = _profile_row(runner, stride_profiles)
+    if profile is None or 'Last_Win_Date' not in profile.index:
+        return 500.0  # Never won — treat as extreme drought
+    last_win = profile.get('Last_Win_Date')
+    if not last_win or str(last_win) in ('nan', 'None', ''):
+        return 500.0
+    try:
+        ref = datetime.strptime(race_date, '%Y-%m-%d') if race_date else datetime.today()
+        lw_date = pd.Timestamp(last_win)
+        days = (ref - lw_date).days
+        return max(0.0, float(days))
+    except Exception:
+        return 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -1636,7 +1951,8 @@ def detect_trainer_change(runner: Runner, stride_results: pd.DataFrame) -> float
     if runs.empty or 'Trainer' not in runs.columns:
         return 0.0
 
-    current_trainer = runner.trainer.lower().strip()
+    # Resolve initials to full name so comparison is apples-to-apples with stride_results
+    current_trainer = _resolve_trainer_name(runner, stride_results).lower().strip()
     recent_trainers = runs['Trainer'].str.lower().str.strip().dropna().tolist()
     if not recent_trainers:
         return 0.0
@@ -1691,32 +2007,44 @@ def compute_head_to_head(
 ) -> float:
     """Win rate when this horse has previously raced against any horse in tonight's field.
 
+    Uses Race_Code column for efficient shared-race matching.
     Returns a score in [-1.0, +1.0]:
       positive = wins more than loses against tonight's field
       negative = loses more than wins
-      0.0 = insufficient shared race data
+      0.0 = insufficient shared race data (< 2 shared meetings)
     """
-    if stride_results.empty or 'Race_No' not in stride_results.columns:
+    use_race_code = 'Race_Code' in stride_results.columns if not stride_results.empty else False
+    if stride_results.empty:
         return 0.0
 
     this_runs = _recent_runs(runner, stride_results, 100)
     if this_runs.empty:
         return 0.0
 
-    # Build set of (Date, Track, Race_No) for races this horse has run
-    this_keys = set()
-    for _, row in this_runs.iterrows():
-        d = str(row.get('Date', '')).strip()
-        t = str(row.get('Track', '')).strip()
-        r = str(row.get('Race_No', '')).strip()
-        if d and t and r:
-            this_keys.add((d, t, r))
+    if use_race_code:
+        this_codes = set(this_runs['Race_Code'].dropna().astype(str).tolist())
+        # Build lookup: race_code -> this horse's place
+        this_place_map = {}
+        for _, row in this_runs.iterrows():
+            rc = str(row.get('Race_Code', ''))
+            place = _safe_float(row.get('Place'), np.nan)
+            if rc and not np.isnan(place):
+                this_place_map[rc] = place
+    else:
+        this_codes = set()
+        this_place_map = {}
+        for _, row in this_runs.iterrows():
+            key = f"{row.get('Date','')}-{row.get('Track','')}-{row.get('Race_No','')}"
+            place = _safe_float(row.get('Place'), np.nan)
+            if not np.isnan(place):
+                this_codes.add(key)
+                this_place_map[key] = place
 
-    if not this_keys:
+    if not this_codes:
         return 0.0
 
     wins = losses = 0
-    field_slugs = {r.slug for r in field if r.slug != runner.slug}
+    total_meetings = 0
 
     for opponent in field:
         if opponent.slug == runner.slug:
@@ -1725,37 +2053,37 @@ def compute_head_to_head(
         if opp_runs.empty:
             continue
 
+        pair_wins = pair_losses = 0
         for _, row in opp_runs.iterrows():
-            d = str(row.get('Date', '')).strip()
-            t = str(row.get('Track', '')).strip()
-            r = str(row.get('Race_No', '')).strip()
-            if (d, t, r) not in this_keys:
+            if use_race_code:
+                key = str(row.get('Race_Code', ''))
+            else:
+                key = f"{row.get('Date','')}-{row.get('Track','')}-{row.get('Race_No','')}"
+
+            if key not in this_codes:
                 continue
 
-            # Shared race — look up this horse's place in that race
-            shared = this_runs[
-                (this_runs['Date'].astype(str).str.strip() == d) &
-                (this_runs['Track'].astype(str).str.strip() == t) &
-                (this_runs['Race_No'].astype(str).str.strip() == r)
-            ]
-            opp_place   = _safe_float(row.get('Place'), np.nan)
-            this_place_rows = pd.to_numeric(shared.get('Place', pd.Series(dtype=float)), errors='coerce')
-            if shared.empty or this_place_rows.empty:
-                continue
-            this_place = float(this_place_rows.iloc[0])
-
+            opp_place = _safe_float(row.get('Place'), np.nan)
+            this_place = this_place_map.get(key, np.nan)
             if np.isnan(this_place) or np.isnan(opp_place):
                 continue
+
             if this_place < opp_place:
-                wins += 1
-            else:
-                losses += 1
+                pair_wins += 1
+            elif opp_place < this_place:
+                pair_losses += 1
 
-    total = wins + losses
-    if total < 3:
-        return 0.0   # Insufficient shared history
+        pair_total = pair_wins + pair_losses
+        if pair_total >= 2:  # minimum 2 meetings to count
+            wins += pair_wins
+            losses += pair_losses
+            total_meetings += pair_total
 
-    return float((wins - losses) / total)
+    if total_meetings < 2:
+        return 0.0
+
+    # Weighted score: -1 to +1
+    return float((wins - losses) / total_meetings)
 
 
 def check_feature_spread(all_features: Dict[str, Dict[str, float]], slugs: List[str]) -> dict:
@@ -1884,11 +2212,23 @@ def extract_features(
     false_start = check_false_start(race_date, track, 0, data.stewards_notes)
 
     # ODM multiplier (stored in _odm_multiplier for agent model)
-    odm_mult = check_odm_mobile(runner, data.stewards_notes, distance_m)
+    # Primary source: stewards_horse_actions.csv (structured data)
+    # Fallback: runner.odm_mobile flag from fields document + stewards_notes freetext
+    odm_status, odm_w = compute_odm_status(runner, data.stewards_horse_actions, race_date)
+    warnings.extend(odm_w)
+    odm_mult = odm_status['odm_penalty_multiplier']
+
+    # If horse_actions gave a definitive answer (reinstated), trust it.
+    # Otherwise fall back to stewards_notes freetext for horses not in horse_actions.
+    if odm_mult >= 1.0 and not odm_status.get('_authoritative', False):
+        odm_mult_legacy = check_odm_mobile(runner, data.stewards_notes, distance_m)
+        if odm_mult_legacy < 1.0:
+            odm_mult = odm_mult_legacy
+
     feats['_odm_multiplier'] = odm_mult
     if odm_mult < 1.0:
         warnings.append(
-            f"{runner.horse}: ODM flag detected — position-dependent features "
+            f"{runner.horse}: ODM/ODS active — position features "
             f"penalised ({odm_mult:.0%} multiplier)"
         )
 
@@ -1900,7 +2240,7 @@ def extract_features(
     add('venue_win_rate',       compute_venue_win_rate(runner, data.stride_profiles, track))
     add('venue_place_rate',     compute_venue_place_rate(runner, data.stride_profiles, track))
     add('barrier_score',        compute_barrier_score(runner, track, start_type))
-    add('driver_venue_rate',    compute_driver_venue_rate(runner, data.driver_results, track, data.stride_results))
+    add('driver_venue_rate',    compute_driver_venue_rate(runner, data.driver_results, track, data.stride_results, race_date))
     add('driver_season_winrate',compute_driver_season_winrate(runner, data.drivers_profile))
     add('driver_horse_combo',   compute_driver_horse_combo(runner, data.stride_results))
     add('last_800m_pos',        compute_last_800m_pos(runner, data.stride_results))
@@ -1913,7 +2253,7 @@ def extract_features(
 
     add('consistency_score',    compute_consistency_score(runner, data.stride_results))
     add('sp_vs_performance',    compute_sp_vs_performance(runner, data.stride_results))
-    add('distance_suitability', compute_distance_suitability(runner, data.stride_results, distance_m))
+    add('distance_suitability', compute_distance_suitability(runner, data.stride_results, distance_m, start_type, race_date))
     add('start_type_rate',      compute_start_type_rate(runner, data.stride_results, start_type))
     add('trainer_form',         compute_trainer_form(runner, data.trainer_results, data.stride_results))
     add('track_condition_rate', compute_track_condition_rate(runner, data.stride_results, track_condition))
@@ -1922,7 +2262,11 @@ def extract_features(
     add('class_trajectory',       compute_class_trajectory(runner, data.stride_results))
     add('field_size_adjustment',  compute_field_size_adjustment(runner, data.stride_results, len(field)))
     add('winner_beaten_quality',  compute_winner_beaten_quality(runner, data.stride_results, data.stride_profiles))
-    add('days_since_last_win',    compute_days_since_last_win(runner, data.stride_profiles, race_date))
+    dlw_score, dlw_warns = compute_days_since_last_win(runner, data.stride_profiles, race_date)
+    feats['days_since_last_win'] = dlw_score
+    warnings.extend(dlw_warns)
+    # Store raw days for DLW post-sim multiplier
+    feats['_days_since_last_win_raw'] = _get_raw_dlw_days(runner, data.stride_profiles, race_date)
     add('last_win_venue_match',   compute_last_win_venue_match(runner, data.stride_profiles, track))
     add('driver_group_experience',compute_driver_group_experience(runner, data.drivers_profile))
     add('driver_experience_years',compute_driver_experience_years(runner, data.drivers_profile))
@@ -1931,6 +2275,9 @@ def extract_features(
     add('mobile_barrier_rate',    compute_mobile_barrier_rate(runner, data.stride_results, runner.barrier))
 
     # ── New features ──────────────────────────────────────────────────────────
+
+    # Gate behaviour from stewards notes (negative flags only)
+    add('gate_behaviour_stewards', compute_gate_behaviour_stewards(runner, data.stewards_notes, race_date))
 
     # Head-to-head vs tonight's field
     h2h, h2h_w = compute_head_to_head(runner, field, data.stride_results), []

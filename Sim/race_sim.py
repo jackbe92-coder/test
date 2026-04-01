@@ -37,7 +37,8 @@ from sim_config import (
     WEIGHT_RANGES, TRACK_OVERRIDES, STANDING_START_BARRIER_ADJUSTMENT,
     DEFAULT_RUNS, PACE_GAP_ON_PACE_STDEV, PACE_GAP_MIDFIELD_STDEV,
     FIELD_STRENGTH_BASELINE, TRACK_PROFILES,
-    MAX_WIN_PCT_SINGLE_HORSE, DLW_DECAY,
+    MAX_WIN_PCT_SINGLE_HORSE, DLW_DECAY, THIN_DATA_THRESHOLD,
+    MAX_WIN_PCT, MAX_PLACE_PCT,
     CONVERGENCE_BATCH_SIZE, CONVERGENCE_THRESHOLD, CONVERGENCE_STABLE_BATCHES,
     WIN_DROUGHT_WARN_DAYS,
     ODM_MOBILE_PENALTY_SHORT, ODM_MOBILE_PENALTY_LONG,
@@ -77,6 +78,8 @@ SCORED_FEATURES = [
     'distance_optimal_range',
     'career_class_experience',
     'mobile_barrier_rate',
+    'gate_behaviour_stewards',
+    'head_to_head',
 ]
 
 # Features that feed the pace (800m position) sub-score
@@ -434,6 +437,9 @@ def run_simulation(
     place_counts = {s: 0 for s in slugs}  # top 3
     pos_total    = {s: 0 for s in slugs}  # sum of finish positions (for avg)
     pace_counts  = {s: {'leader': 0, 'on_pace': 0, 'midfield': 0, 'back': 0} for s in slugs}
+    mid_counts   = {s: {'leader': 0, 'on_pace': 0, 'midfield': 0, 'back': 0} for s in slugs}
+    phase1_top3  = {s: 0 for s in slugs}  # times in positions 1-3 at 800m
+    phase2_top3  = {s: 0 for s in slugs}  # times in positions 1-3 at 400m
 
     gate_wins = {'low': {s: 0 for s in slugs}, 'mid': {s: 0 for s in slugs}, 'high': {s: 0 for s in slugs}}
     gate_runs = {'low': 0, 'mid': 0, 'high': 0}
@@ -447,7 +453,7 @@ def run_simulation(
     for run_idx in range(n_runs):
         weights = draw_weights(eff_ranges)
 
-        finish_order, pace_order, pace_positions = run_single_agentbased(
+        finish_order, pace_order, pace_positions, mid_positions = run_single_agentbased(
             slugs=slugs,
             z_scores=z_scores,
             raw_features=all_features,
@@ -467,13 +473,27 @@ def run_simulation(
                 place_counts[slug] += 1
             pos_total[slug] += (pos + 1)
 
-        # Tally pace positions
+        # Tally pace positions (800m)
         for slug, bucket in pace_positions.items():
             std_bucket = bucket if bucket in pace_counts[slug] else (
                 'on_pace' if bucket in ('garden_seat', 'midfield_runner') else bucket
             )
             if std_bucket in pace_counts[slug]:
                 pace_counts[slug][std_bucket] += 1
+
+        # Tally mid positions (400m)
+        for slug, bucket in mid_positions.items():
+            if bucket in mid_counts[slug]:
+                mid_counts[slug][bucket] += 1
+
+        # Tally top-3 positions at 800m (from pace_order) and 400m (from mid_positions)
+        for idx, slug in enumerate(pace_order[:3]):
+            phase1_top3[slug] += 1
+        # For 400m, sort by position bucket priority then gap
+        mid_sorted = sorted(mid_positions.keys(),
+                           key=lambda s: {'leader': 0, 'on_pace': 1, 'midfield': 2, 'back': 3}.get(mid_positions[s], 4))
+        for slug in mid_sorted[:3]:
+            phase2_top3[slug] += 1
 
         # Robustness binning by w_gate_speed tertile
         g = weights['w_gate_speed']
@@ -505,6 +525,10 @@ def run_simulation(
         s: {k: v / runs_done for k, v in pace_counts[s].items()}
         for s in slugs
     }
+    mid_pct   = {
+        s: {k: v / runs_done for k, v in mid_counts[s].items()}
+        for s in slugs
+    }
 
     # --- Robustness: win rate per weight band ---
     weight_win_rates = {}
@@ -515,21 +539,62 @@ def run_simulation(
             rates[band_key] = gate_wins[band_key][slug] / denom if denom > 0 else 0.0
         weight_win_rates[slug] = rates
 
-    # --- Win% sanity check ---
+    # --- DLW multiplier ---
+    dlw_pts = sorted(DLW_DECAY.items())
+    def _dlw_mult(days: float) -> float:
+        if days <= 0:
+            return 1.0
+        for i in range(len(dlw_pts) - 1):
+            lo_d, lo_m = dlw_pts[i]
+            hi_d, hi_m = dlw_pts[i + 1]
+            if lo_d <= days <= hi_d:
+                t = (days - lo_d) / (hi_d - lo_d)
+                return lo_m + t * (hi_m - lo_m)
+        return dlw_pts[-1][1]
+
     for slug in slugs:
-        if win_pct[slug] > MAX_WIN_PCT_SINGLE_HORSE:
-            horse_name = next((r.horse for r in runners if r.slug == slug), slug)
-            print(
-                f"[WARNING] {horse_name} win% = {win_pct[slug]*100:.1f}% "
-                f"— exceeds {MAX_WIN_PCT_SINGLE_HORSE*100:.0f}% ceiling. "
-                f"Possible data artefact — check manually."
-            )
+        dlw = all_features[slug].get('_days_since_last_win_raw', 0.0)
+        win_pct[slug] *= _dlw_mult(dlw)
+
+    # Re-normalise win% to sum to 1.0
+    total_win = sum(win_pct.values())
+    if total_win > 0:
+        win_pct = {s: v / total_win for s, v in win_pct.items()}
+
+    # --- Thin data regression to mean ---
+    field_avg_win = 1.0 / len(slugs)
+    field_avg_place = 3.0 / len(slugs)
+    for slug in slugs:
+        conf = all_features[slug].get('_data_confidence', 1.0)
+        if conf < THIN_DATA_THRESHOLD:
+            blend = conf / THIN_DATA_THRESHOLD
+            win_pct[slug] = blend * win_pct[slug] + (1.0 - blend) * field_avg_win
+            place_pct[slug] = blend * place_pct[slug] + (1.0 - blend) * field_avg_place
+
+    # --- Win% cap with proportional redistribution ---
+    def _apply_cap(pct_dict, cap, slug_list):
+        for s in slug_list:
+            if pct_dict[s] > cap:
+                excess = pct_dict[s] - cap
+                pct_dict[s] = cap
+                others = [x for x in slug_list if x != s]
+                other_total = sum(pct_dict[x] for x in others)
+                if other_total > 0:
+                    for x in others:
+                        pct_dict[x] += excess * (pct_dict[x] / other_total)
+        return pct_dict
+
+    win_pct = _apply_cap(win_pct, MAX_WIN_PCT, slugs)
+    place_pct = _apply_cap(place_pct, MAX_PLACE_PCT, slugs)
 
     return {
         'win_pct':          win_pct,
         'place_pct':        place_pct,
         'avg_pos':          avg_pos,
         'pace_pct':         pace_pct,
+        'mid_pct':          mid_pct,
+        'phase1_top3_pct':  {s: phase1_top3[s] / runs_done for s in slugs},
+        'phase2_top3_pct':  {s: phase2_top3[s] / runs_done for s in slugs},
         'weight_win_rates': weight_win_rates,
         'n_runs':           runs_done,
         'convergence_run':  convergence_run,
@@ -616,7 +681,7 @@ def main():
         if not _is_fields_doc(form_str):
             print("[ERROR] --all requires a harness.au fields document", file=sys.stderr)
             sys.exit(1)
-        races = parse_fields_doc(form_str, data_dir=args.data)
+        races = parse_fields_doc(form_str, data_dir=args.data, filename=label)
         if args.track:
             for r in races:
                 r.track = normalise_track(args.track)
@@ -674,6 +739,7 @@ def main():
             data_dir=args.data,
             track_override=args.track,
             race_no=args.race,
+            filename=label,
         )
     except Exception as e:
         print(f"[ERROR] Could not parse form: {e}", file=sys.stderr)

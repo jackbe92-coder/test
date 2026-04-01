@@ -71,23 +71,30 @@ def run_smoke_test() -> bool:
     print("  SMOKE TEST — Agent-Based Simulation Engine")
     print("=" * 68)
 
-    # ── 1. Generate synthetic data ────────────────────────────────────────────
-    print("\n[1/9] Generating synthetic data ...")
-    try:
-        make_script = os.path.join(SIM_DIR, 'make_synthetic_data.py')
-        result = subprocess.run(
-            [sys.executable, make_script],
-            capture_output=True, text=True, cwd=ROOT_DIR
-        )
-        ok = result.returncode == 0
-        _check(ok,
-               "Synthetic data generated successfully",
-               f"make_synthetic_data.py failed: {result.stderr[:200]}",
-               results)
-        if not ok:
+    # ── 1. Data availability check ─────────────────────────────────────────────
+    print("\n[1/9] Checking data availability ...")
+    make_script = os.path.join(SIM_DIR, 'make_synthetic_data.py')
+    stride_csv = os.path.join(DATA_DIR, 'stride_results.csv')
+    if os.path.exists(stride_csv):
+        _check(True, "Data files present (stride_results.csv found)", "", results)
+    elif os.path.exists(make_script):
+        try:
+            result = subprocess.run(
+                [sys.executable, make_script],
+                capture_output=True, text=True, cwd=ROOT_DIR
+            )
+            ok = result.returncode == 0
+            _check(ok,
+                   "Synthetic data generated successfully",
+                   f"make_synthetic_data.py failed: {result.stderr[:200]}",
+                   results)
+            if not ok:
+                all_pass = False
+        except Exception as e:
+            _check(False, '', f"Could not run make_synthetic_data.py: {e}", results)
             all_pass = False
-    except Exception as e:
-        _check(False, '', f"Could not run make_synthetic_data.py: {e}", results)
+    else:
+        _check(False, '', "No data: stride_results.csv missing and make_synthetic_data.py not found", results)
         all_pass = False
 
     # ── 2-7. Run simulation ───────────────────────────────────────────────────

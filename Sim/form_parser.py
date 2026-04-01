@@ -172,9 +172,12 @@ def normalise_track(raw: str) -> str:
 
 
 def extract_track(s: str) -> Optional[str]:
-    """Try to identify a known track name in a string."""
+    """Try to identify a known track name in a string.
+
+    Uses word-start boundary but allows trailing digits (e.g. 'Launceston22032026').
+    """
     for key, normalised in VENUE_NORMALISE.items():
-        if re.search(r'\b' + re.escape(key) + r'\b', s.lower()):
+        if re.search(r'\b' + re.escape(key) + r'(?:\b|\d)', s.lower()):
             return normalised
     return None
 
@@ -309,12 +312,21 @@ def parse_fields_race_header(line: str) -> Optional[dict]:
 def _find_trainer_start(tokens: list[str]) -> int:
     """Find the index where trainer initials begin in a token list.
 
-    Trainer block starts at 2+ consecutive single uppercase letter tokens.
-    Returns index of the first such letter, or len(tokens) if not found.
+    Primary rule: 2+ consecutive single uppercase letter tokens (e.g. 'T E Rattray').
+    Secondary rule: single uppercase initial followed by a title-case surname
+      (e.g. 'T Bain') — catches trainers with only one initial.  Title-case is
+      defined as first char uppercase, remaining chars lowercase, length >= 3,
+      so country suffixes (NZ, GB) and all-caps horse-name words are excluded.
+    Returns index of the first initial token, or len(tokens) if not found.
     """
     for i in range(len(tokens) - 1):
         if len(tokens[i]) == 1 and tokens[i].isupper():
+            # Primary: next token is also a single uppercase letter
             if len(tokens[i + 1]) == 1 and tokens[i + 1].isupper():
+                return i
+            # Secondary: next token is title-case surname (>= 3 chars)
+            nxt = tokens[i + 1]
+            if len(nxt) >= 3 and nxt[0].isupper() and nxt[1:].islower():
                 return i
     return len(tokens)
 
@@ -381,7 +393,7 @@ def parse_fields_runner_line(line: str) -> Optional[dict]:
         r'(NR\d+)(?:\s+\(A(\d+)\))?\s+'
         r'((?:FT|10|20)\s+)?'
         r'(FR\d+|SR\d+)\s+'
-        r'(\d+\.\d+)\s*$',
+        r'(\d+\.\d+|-)\s*$',
         rest,
     )
     if not right_m:
@@ -391,7 +403,8 @@ def parse_fields_runner_line(line: str) -> Optional[dict]:
     adj_val = right_m.group(2)
     standing_hcp = (right_m.group(3) or '').strip()
     barrier_code = right_m.group(4)
-    odds = float(right_m.group(5))
+    odds_str = right_m.group(5)
+    odds = 0.0 if odds_str == '-' else float(odds_str)
 
     # NR values
     class_str = nr_raw_str
@@ -500,6 +513,7 @@ def parse_fields_doc(
     text: str,
     race_no: int = 0,
     data_dir: str = '',
+    filename: str = '',
 ) -> list[RaceInfo]:
     """Parse a complete harness.au fields document.
 
@@ -557,6 +571,12 @@ def parse_fields_doc(
             if t:
                 track = t
                 break
+
+    # Fallback: extract track from filename (e.g. "Launceston22032026.txt")
+    if not track and filename:
+        t = extract_track(os.path.basename(filename))
+        if t:
+            track = t
 
     # Parse race headers and runner lines
     races: list[RaceInfo] = []
@@ -1296,6 +1316,7 @@ def parse_form(
     data_dir: str,
     track_override: Optional[str] = None,
     race_no: int = 0,
+    filename: str = '',
 ) -> RaceInfo:
     """Detect form type and return a RaceInfo.
 
@@ -1304,6 +1325,7 @@ def parse_form(
         data_dir:       Path to output/claude_data/ (used only for standings lookups).
         track_override: Explicit track name (overrides anything parsed from form).
         race_no:        Race number to select from the PDF (required for PDFs).
+        filename:       Original filename (used to extract track from filename).
 
     Returns:
         RaceInfo with runners populated.
@@ -1321,7 +1343,7 @@ def parse_form(
 
     # --- Fields document (harness.au format) ---
     if _is_fields_doc(form_str):
-        races = parse_fields_doc(form_str, race_no=race_no, data_dir=data_dir)
+        races = parse_fields_doc(form_str, race_no=race_no, data_dir=data_dir, filename=filename)
         if track_override:
             for r in races:
                 r.track = normalise_track(track_override)

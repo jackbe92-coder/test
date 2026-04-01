@@ -48,6 +48,7 @@ class HorseState:
     speed_m_per_s: float    # current speed
     checked: bool           # interference flag this segment
     finished: bool
+    phases_led: int = 0     # count of phases spent as leader (for deceleration)
 
 
 # ---------------------------------------------------------------------------
@@ -211,8 +212,11 @@ def simulate_phase1(
             if gate_z > -0.5 and barrier <= gate_clear_threshold + 3:
                 if np.random.random() < p_clear:
                     new_lane = max(1, barrier // 2)
+                    lanes_cleared = barrier - new_lane
                     s.lane = new_lane
-                    scores[s.slug] += 0.8  # bonus for successful clear
+                    # Scaled bonus: more run-in = bigger; more lanes to clear = smaller
+                    bonus = (run_in / 150.0) * (1.0 / max(1, lanes_cleared)) * 0.8
+                    scores[s.slug] += min(1.2, bonus)
 
     # --- Sort by score → establish 800m rank ---
     sorted_slugs = sorted(scores, key=scores.__getitem__, reverse=True)
@@ -230,6 +234,7 @@ def simulate_phase1(
         # Assign energy based on position bucket
         if rank == 1:
             s.energy = max(0.0, 1.0 - e_leader)
+            s.phases_led += 1
         elif rank <= 1 + n_on_pace:
             s.energy = max(0.0, 1.0 - e_on_pace)
         elif rank <= 1 + n_on_pace + n_midfield:
@@ -307,9 +312,15 @@ def simulate_phase2(
             p_move = TACTICAL_MOVE_BASE_PROB * s.energy * min(1.0, finish_z / 1.5)
             if np.random.random() < p_move:
                 s.gap_to_leader_m = max(0.1, s.gap_to_leader_m - TACTICAL_GAP_GAIN_M)
+                s.energy = max(0.0, s.energy - 0.08)  # moving costs fuel
 
     # Recalculate rank positions from updated gaps
     _recalc_positions(states)
+
+    # Track leadership for phase 3 deceleration
+    for s in states:
+        if s.position == 1:
+            s.phases_led += 1
 
     return states
 
@@ -357,10 +368,14 @@ def simulate_phase3(
         )
 
         # Convert z-score to speed differential:
-        # Energy modulates only the kick ABOVE base pace, not the base itself.
-        # A tired leader still sprints at BASE_PACE_MS; fresh horses earn a bonus.
-        # z=+1 at full energy → +9% above base; z=-1 → -9%.
-        avail = BASE_PACE_MS * (1.0 + effective_finish_z * 0.09 * max(0.0, s.energy))
+        # Horses that led through both phases suffer deceleration — a fully
+        # exhausted leader runs at 85% of base pace, not 100%.
+        # Non-leaders retain the original formula (base factor = 1.0).
+        if s.phases_led >= 2:
+            energy_factor = 0.85 + (0.15 * max(0.0, s.energy))
+        else:
+            energy_factor = 1.0
+        avail = BASE_PACE_MS * (energy_factor + effective_finish_z * 0.09 * max(0.0, s.energy))
 
         # ODM penalty also reduces sprint effectiveness: horse went wide, is
         # physically spent and out of its comfort zone in the straight.
@@ -422,6 +437,7 @@ def run_single_agentbased(
         finish_order:   slugs from 1st to last
         pace_order:     slugs by 800m position (front to back)
         pace_positions: {slug: 'leader'|'on_pace'|'midfield'|'back'} at 800m
+        mid_positions:  {slug: 'leader'|'on_pace'|'midfield'|'back'} at 400m
     """
     if track_profile is None:
         track_profile = {}
@@ -460,9 +476,14 @@ def run_single_agentbased(
     # --- Phase 2: 800m → 400m ---
     states = simulate_phase2(states, features, weights, tp)
 
+    # Capture positions at 400m
+    mid_positions: Dict[str, str] = {}
+    for s in states:
+        mid_positions[s.slug] = _position_bucket(s.position, n)
+
     # --- Phase 3: 400m → Finish ---
     states = simulate_phase3(states, features, weights, tp)
 
     finish_order = [s.slug for s in sorted(states, key=lambda s: s.gap_to_leader_m)]
 
-    return finish_order, pace_order, pace_positions
+    return finish_order, pace_order, pace_positions, mid_positions

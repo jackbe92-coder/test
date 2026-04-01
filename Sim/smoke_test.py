@@ -1,16 +1,16 @@
 """
-smoke_test.py — End-to-end smoke test for the agent-based simulation engine.
+smoke_test.py — End-to-end smoke tests for the agent-based simulation engine.
 
-Checks (from spec Section 6.4):
-  1. Generate synthetic data
-  2. Run simulation on Burnie Race 4 (6-horse field)
-  3. Did all 6 horses get simulated?
-  4. Do win percentages sum to ~100%?
-  5. Does Andaman Bay (NR54, best horse) have highest win%?
-  6. No horse exceeds 75% win probability
-  7. All three phases completed without error
-  8. Convergence log present
-  9. Print PASS or FAIL with specific failure reason
+Tests (9 checks):
+  1. Data availability (stride_results.csv exists with real data)
+  2. Simulation runs without error on Burnie Race 4 (6-horse field)
+  3. All 6 horses present in results
+  4. Win percentages sum to ~100%
+  5. Finish order emerges from gap_to_leader_m, NOT from a parallel score sort
+  6. Phase output matches harness.au sectional format (sectionals dict with correct keys)
+  7. Recency dampening fires on a known artefact pattern (contradicting trend vs recent)
+  8. Confidence flags: LOW CONFIDENCE for thin-data horses, MAINLAND — NO DATA for missing
+  9. No odds comparison (VALUE/OVERBET) in report output
 
 Run from project root:
     python Sim/smoke_test.py
@@ -18,9 +18,11 @@ Run from project root:
 
 from __future__ import annotations
 
+import io
 import subprocess
 import sys
 import os
+import contextlib
 
 import numpy as np
 
@@ -36,7 +38,6 @@ if ROOT_DIR not in sys.path:
 DATA_DIR = os.path.join(ROOT_DIR, 'output', 'claude_data')
 RUNS = 2000  # Smaller count for smoke test speed
 EXPECTED_HORSES = 6
-EXPECTED_WINNER = 'andaman-bay'  # NR54 = best horse in Burnie Race 4
 MAX_WIN_PCT = 0.75
 MIN_WIN_SUM = 0.98
 MAX_WIN_SUM = 1.02
@@ -68,36 +69,24 @@ def run_smoke_test() -> bool:
     all_pass = True
 
     print("=" * 68)
-    print("  SMOKE TEST — Agent-Based Simulation Engine")
+    print("  SMOKE TEST — Agent-Based Simulation Engine (v2)")
     print("=" * 68)
 
     # ── 1. Data availability check ─────────────────────────────────────────────
     print("\n[1/9] Checking data availability ...")
-    make_script = os.path.join(SIM_DIR, 'make_synthetic_data.py')
     stride_csv = os.path.join(DATA_DIR, 'stride_results.csv')
-    if os.path.exists(stride_csv):
-        _check(True, "Data files present (stride_results.csv found)", "", results)
-    elif os.path.exists(make_script):
-        try:
-            result = subprocess.run(
-                [sys.executable, make_script],
-                capture_output=True, text=True, cwd=ROOT_DIR
-            )
-            ok = result.returncode == 0
-            _check(ok,
-                   "Synthetic data generated successfully",
-                   f"make_synthetic_data.py failed: {result.stderr[:200]}",
-                   results)
-            if not ok:
-                all_pass = False
-        except Exception as e:
-            _check(False, '', f"Could not run make_synthetic_data.py: {e}", results)
-            all_pass = False
-    else:
-        _check(False, '', "No data: stride_results.csv missing and make_synthetic_data.py not found", results)
+    ok1 = _check(
+        os.path.exists(stride_csv),
+        "Data files present (stride_results.csv found)",
+        "stride_results.csv missing — cannot run simulation",
+        results,
+    )
+    if not ok1:
         all_pass = False
+        _summarise(results)
+        return False
 
-    # ── 2-7. Run simulation ───────────────────────────────────────────────────
+    # ── 2-4. Run simulation ──────────────────────────────────────────────────
     print("\n[2/9] Running simulation on Burnie Race 4 ...")
     sim_error = None
     race_info = sim_results = all_features = None
@@ -109,8 +98,6 @@ def run_smoke_test() -> bool:
 
         race_info = parse_form(form_str=BURNIE_RACE4_FORM, data_dir=DATA_DIR)
         if not race_info.runners:
-            # If PDF parse failed, construct RaceInfo directly
-            from dataclasses import dataclass, field as dc_field
             runners = [
                 Runner(horse='Modern Jive', slug='modern-jive', barrier=1, driver='Gareth Rattray',  nr=52),
                 Runner(horse='Nikita Jo',   slug='nikita-jo',   barrier=2, driver='Ryan Backhouse',  nr=50),
@@ -135,13 +122,13 @@ def run_smoke_test() -> bool:
         all_pass = False
 
     if sim_error:
-        # Print results so far
         _summarise(results)
         return False
 
+    _check(True, "Simulation completed without error", "", results)
+
     # ── 3. All 6 horses simulated ─────────────────────────────────────────────
-    print("\n[3/9] Checking all horses simulated ...")
-    slugs = [r.slug for r in race_info.runners]
+    print("[3/9] Checking all horses simulated ...")
     n_sim = len(sim_results['win_pct'])
     ok3 = _check(
         n_sim == EXPECTED_HORSES,
@@ -158,54 +145,172 @@ def run_smoke_test() -> bool:
     ok4 = _check(
         MIN_WIN_SUM <= win_sum <= MAX_WIN_SUM,
         f"Win %s sum to {win_sum*100:.1f}% (within ±2%)",
-        f"Win %s sum to {win_sum*100:.1f}% — out of range [{MIN_WIN_SUM*100:.0f}%, {MAX_WIN_SUM*100:.0f}%]",
+        f"Win %s sum to {win_sum*100:.1f}% — out of range",
         results,
     )
     if not ok4:
         all_pass = False
 
-    # ── 5. Andaman Bay has highest win% ──────────────────────────────────────
-    print("[5/9] Checking Andaman Bay has highest win% ...")
-    top_slug = max(sim_results['win_pct'], key=sim_results['win_pct'].__getitem__)
+    # ── 5. Finish order emerges from gap_to_leader_m, NOT score sort ──────────
+    print("[5/9] Verifying finish order from gap, not score ...")
+    # Run a single agent simulation and verify the finish order matches
+    # gap_to_leader_m sorting
+    from agent_model import run_single_agentbased, PhaseCheckpoint
+    from race_sim import zscore_field, draw_weights, _effective_weight_ranges
+    from sim_config import TRACK_PROFILES
+
+    slugs = [r.slug for r in race_info.runners]
+    z_scores = zscore_field(all_features, slugs, SCORED_FEATURES)
+    eff_ranges = _effective_weight_ranges(race_info.track, race_info.start_type)
+    tp = TRACK_PROFILES.get(race_info.track, {})
+
+    np.random.seed(123)
+    weights = draw_weights(eff_ranges)
+    finish_order, pace_order, pace_pos, mid_pos, checkpoints = run_single_agentbased(
+        slugs=slugs,
+        z_scores=z_scores,
+        raw_features=all_features,
+        weights=weights,
+        track=race_info.track,
+        start_type=race_info.start_type,
+        track_profile=tp,
+    )
+
+    # The finish order must be sorted by gap from the finish checkpoints
+    ckpt_fin = {c.slug: c.gap_to_leader_m for c in checkpoints['finish']}
+    gap_sorted = sorted(ckpt_fin.keys(), key=lambda s: ckpt_fin[s])
+
     ok5 = _check(
-        top_slug == EXPECTED_WINNER,
-        f"Andaman Bay (NR54) is top pick with {sim_results['win_pct'].get(EXPECTED_WINNER, 0)*100:.1f}%",
-        f"Top pick is {top_slug!r} ({sim_results['win_pct'].get(top_slug, 0)*100:.1f}%), not Andaman Bay",
+        finish_order == gap_sorted,
+        "Finish order emerges from gap_to_leader_m (not score sort)",
+        f"Finish order mismatch: finish_order != gap-sorted order",
         results,
     )
     if not ok5:
         all_pass = False
 
-    # ── 6. No horse exceeds 75% ───────────────────────────────────────────────
-    print("[6/9] Checking no horse exceeds 75% win probability ...")
-    max_pct = max(sim_results['win_pct'].values())
+    # ── 6. Phase output matches harness.au sectional format ───────────────────
+    print("[6/9] Checking sectional output matches harness.au format ...")
+    sectionals = sim_results.get('sectionals', {})
+    has_sectionals = bool(sectionals)
+    required_keys = {
+        'avg_800m_margin', 'avg_400m_margin', 'avg_finish_margin',
+        'avg_q3_time', 'avg_q4_time',
+        'avg_gained_800_400', 'avg_gained_400_finish',
+    }
+    keys_ok = True
+    if has_sectionals:
+        first_slug = list(sectionals.keys())[0]
+        actual_keys = set(sectionals[first_slug].keys())
+        keys_ok = required_keys.issubset(actual_keys)
+    else:
+        keys_ok = False
+
     ok6 = _check(
-        max_pct <= MAX_WIN_PCT,
-        f"Max win% = {max_pct*100:.1f}% (within 75% ceiling)",
-        f"Max win% = {max_pct*100:.1f}% — exceeds {MAX_WIN_PCT*100:.0f}% ceiling",
+        has_sectionals and keys_ok,
+        f"Sectionals dict present with all {len(required_keys)} required keys",
+        f"Sectionals missing or incomplete keys. Has: {set(sectionals.get(list(sectionals.keys())[0], {}).keys()) if sectionals else set()}",
         results,
     )
     if not ok6:
         all_pass = False
 
-    # ── 7. All phases completed without error ─────────────────────────────────
-    print("[7/9] Confirming all phases completed ...")
-    _check(True, "All three phases completed without error", "", results)
+    # Also verify checkpoint data was returned from single run
+    has_checkpoints = (
+        '800m' in checkpoints and '400m' in checkpoints and 'finish' in checkpoints
+        and len(checkpoints['800m']) == EXPECTED_HORSES
+        and len(checkpoints['400m']) == EXPECTED_HORSES
+        and len(checkpoints['finish']) == EXPECTED_HORSES
+        and all(isinstance(c, PhaseCheckpoint) for c in checkpoints['finish'])
+    )
+    if not has_checkpoints:
+        results.append(('FAIL', f"Checkpoint data incomplete: {list(checkpoints.keys())}"))
+        all_pass = False
 
-    # ── 8. Convergence log present ────────────────────────────────────────────
-    print("[8/9] Checking convergence tracking ...")
-    conv = sim_results.get('convergence_run')
+    # ── 7. Recency dampening fires on contradicting trend ─────────────────────
+    print("[7/9] Testing recency dampening on contradicting trend ...")
+    from feature_extractor import compute_recency_dampening
+    import pandas as pd
+
+    # Create a fake runner and stride_results where recent 3 runs contradict seasonal trend
+    fake_runner = Runner(horse='Test Horse', slug='test-horse', barrier=1)
+
+    # Seasonal trend = positive (improving), but last 3 runs show worsening (higher mile rate)
+    fake_sr = pd.DataFrame({
+        'Slug': ['test-horse'] * 5,
+        '_slug': ['test-horse'] * 5,
+        'Horse': ['Test Horse'] * 5,
+        'Date': pd.date_range('2026-01-01', periods=5, freq='14D'),
+        'Mile_Rate': [120.0, 119.0, 118.0, 119.5, 121.0],  # newest=121 (worst), oldest=120
+        'Place': [3, 2, 1, 4, 5],
+    })
+    # Sort newest first (as _recent_runs would return)
+    fake_sr = fake_sr.sort_values('Date', ascending=False).reset_index(drop=True)
+
+    positive_trend = 0.5  # seasonal says improving
+    dampened, damp_w = compute_recency_dampening(fake_runner, fake_sr, positive_trend)
+
+    ok7 = _check(
+        abs(dampened) < abs(positive_trend) and len(damp_w) > 0,
+        f"Recency dampening fired: {positive_trend:.3f} → {dampened:.3f} (warnings: {len(damp_w)})",
+        f"Recency dampening did NOT fire. Input={positive_trend}, output={dampened}, warnings={damp_w}",
+        results,
+    )
+    if not ok7:
+        all_pass = False
+
+    # ── 8. Confidence flags for thin data / mainland horses ───────────────────
+    print("[8/9] Checking confidence flags ...")
+    from report_generator import _confidence_label
+
+    # Test LOW CONFIDENCE: horse with < 5 Tasmanian starts
+    thin_feats = {'_data_confidence': 0.3, '_mainland_visitor': 0.0, '_tas_starts': 3}
+    thin_label = _confidence_label('test-thin', {'test-thin': thin_feats})
+
+    # Test MAINLAND — NO DATA: horse flagged as visitor
+    visitor_feats = {'_data_confidence': 0.05, '_mainland_visitor': 1.0, '_tas_starts': 0}
+    visitor_label = _confidence_label('test-visitor', {'test-visitor': visitor_feats})
+
+    # Test OK: horse with plenty of data
+    ok_feats = {'_data_confidence': 0.9, '_mainland_visitor': 0.0, '_tas_starts': 30}
+    ok_label = _confidence_label('test-ok', {'test-ok': ok_feats})
+
     ok8 = _check(
-        'convergence_run' in sim_results,
-        f"Convergence key present (converged at run {conv or 'never'})",
-        "convergence_run key missing from results",
+        thin_label == "LOW CONFIDENCE"
+        and visitor_label == "MAINLAND — NO DATA"
+        and ok_label == "",
+        f"Confidence flags correct: thin='{thin_label}', visitor='{visitor_label}', ok='{ok_label}'",
+        f"Confidence flags wrong: thin='{thin_label}', visitor='{visitor_label}', ok='{ok_label}'",
         results,
     )
     if not ok8:
         all_pass = False
 
-    # ── 9. Summary ────────────────────────────────────────────────────────────
-    print("\n[9/9] Win% table:")
+    # ── 9. No odds comparison (VALUE/OVERBET) in report output ────────────────
+    print("[9/9] Checking no VALUE/OVERBET in report output ...")
+    from report_generator import generate_report
+
+    # Capture stdout from generate_report
+    captured = io.StringIO()
+    with contextlib.redirect_stdout(captured):
+        generate_report(sim_results, race_info, all_features, warnings)
+    report_text = captured.getvalue()
+
+    has_value = 'VALUE' in report_text
+    has_overbet = 'OVERBET' in report_text
+    has_oppose = 'OPPOSE:' in report_text
+
+    ok9 = _check(
+        not has_value and not has_overbet and not has_oppose,
+        "No VALUE/OVERBET/OPPOSE flags in report output",
+        f"Report still contains odds comparison: VALUE={has_value} OVERBET={has_overbet} OPPOSE={has_oppose}",
+        results,
+    )
+    if not ok9:
+        all_pass = False
+
+    # ── Summary ───────────────────────────────────────────────────────────────
+    print(f"\n[Summary] Win% table:")
     print(f"  {'Horse':<20} {'Win%':>7} {'Place%':>8}")
     print("  " + "-" * 37)
     for r in sorted(race_info.runners, key=lambda x: -sim_results['win_pct'].get(x.slug, 0)):

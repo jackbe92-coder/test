@@ -51,6 +51,16 @@ class HorseState:
     phases_led: int = 0     # count of phases spent as leader (for deceleration)
 
 
+@dataclass
+class PhaseCheckpoint:
+    """Per-horse data at a phase boundary, matching harness.au sectional format."""
+    slug: str
+    position: int
+    gap_to_leader_m: float
+    section_time_s: float       # estimated quarter time for preceding segment
+    metres_gained_vs_leader: float  # change in gap since previous checkpoint (negative = fell back)
+
+
 # ---------------------------------------------------------------------------
 # Gate clear probability (Section 3.2 of spec)
 # ---------------------------------------------------------------------------
@@ -139,16 +149,11 @@ def simulate_phase1(
     features: Dict[str, Dict],
     weights: Dict[str, float],
     track_profile: dict,
-) -> List[HorseState]:
+) -> Tuple[List[HorseState], List[PhaseCheckpoint]]:
     """Phase 1: Start → 800m.
 
     Establishes 800m positions and initial energy levels.
-
-    Key physics:
-    - Gate speed z-score + stochastic noise → position score
-    - Barrier advantage: inside draw = bonus (mobile starts heavily, standing starts reduced)
-    - Gate clear attempt: wide horses may clear to rail if run_in allows it
-    - Energy assigned based on position bucket (leader pays most)
+    Returns (states, checkpoints_at_800m).
     """
     n = len(states)
     if n == 0:
@@ -242,11 +247,27 @@ def simulate_phase1(
         else:
             s.energy = max(0.0, 1.0 - e_back)
 
-    return states
+    # Build 800m checkpoints — no previous checkpoint so metres_gained = 0
+    # Estimate section time: distance_to_800m / speed (crudely from energy)
+    circuit_m = float(track_profile.get('circuit_length_m', 1000))
+    distance_m = float(track_profile.get('race_distance_m', 2000))
+    dist_to_800 = max(200, distance_m - 800)
+    checkpoints_800m = []
+    for s in states:
+        sect_time = dist_to_800 / max(1.0, s.speed_m_per_s * s.energy)
+        checkpoints_800m.append(PhaseCheckpoint(
+            slug=s.slug,
+            position=s.position,
+            gap_to_leader_m=s.gap_to_leader_m,
+            section_time_s=sect_time,
+            metres_gained_vs_leader=0.0,
+        ))
+
+    return states, checkpoints_800m
 
 
 # ---------------------------------------------------------------------------
-# Phase 2: 800m → 400m
+# Phase 2: 800m → 400m (Q3)
 # ---------------------------------------------------------------------------
 
 def simulate_phase2(
@@ -254,8 +275,8 @@ def simulate_phase2(
     features: Dict[str, Dict],
     weights: Dict[str, float],
     track_profile: dict,
-) -> List[HorseState]:
-    """Phase 2: 800m → 400m.
+) -> Tuple[List[HorseState], List[PhaseCheckpoint]]:
+    """Phase 2: 800m → 400m (Q3).
 
     Key physics:
     - Energy depletion continues (shorter segment → lower costs than Phase 1)
@@ -265,7 +286,10 @@ def simulate_phase2(
     """
     n = len(states)
     if n == 0:
-        return states
+        return states, []
+
+    # Snapshot gaps at 800m (before Phase 2 modifies them)
+    gaps_at_800m = {s.slug: s.gap_to_leader_m for s in states}
 
     # Energy costs for this segment (scaled down from phase 1)
     e_leader  = float(track_profile.get('leader_energy_cost',   PHASE1_LEADER_ENERGY_COST))  * 0.5
@@ -301,10 +325,9 @@ def simulate_phase2(
             s.gap_to_leader_m += INTERFERENCE_GAP_PENALTY_M
 
     # --- Tactical moves: high-energy horses with good finishing speed advance ---
-    # Sort by current position so we don't double-count moves
     for s in sorted(states, key=lambda x: x.position):
         if s.position <= 2:
-            continue  # Leader and near-leader hold position
+            continue
         f = features.get(s.slug, {})
         finish_z = float(f.get('finishing_speed_z', 0.0))
 
@@ -312,21 +335,33 @@ def simulate_phase2(
             p_move = TACTICAL_MOVE_BASE_PROB * s.energy * min(1.0, finish_z / 1.5)
             if np.random.random() < p_move:
                 s.gap_to_leader_m = max(0.1, s.gap_to_leader_m - TACTICAL_GAP_GAIN_M)
-                s.energy = max(0.0, s.energy - 0.08)  # moving costs fuel
+                s.energy = max(0.0, s.energy - 0.08)
 
-    # Recalculate rank positions from updated gaps
     _recalc_positions(states)
 
-    # Track leadership for phase 3 deceleration
     for s in states:
         if s.position == 1:
             s.phases_led += 1
 
-    return states
+    # Build 400m (Q3) checkpoints
+    checkpoints_400m = []
+    for s in states:
+        gap_800 = gaps_at_800m[s.slug]
+        metres_gained = gap_800 - s.gap_to_leader_m  # positive = closed gap
+        q3_time = 400.0 / max(1.0, s.speed_m_per_s * s.energy)
+        checkpoints_400m.append(PhaseCheckpoint(
+            slug=s.slug,
+            position=s.position,
+            gap_to_leader_m=s.gap_to_leader_m,
+            section_time_s=q3_time,
+            metres_gained_vs_leader=metres_gained,
+        ))
+
+    return states, checkpoints_400m
 
 
 # ---------------------------------------------------------------------------
-# Phase 3: 400m → Finish
+# Phase 3: 400m → Finish (Q4)
 # ---------------------------------------------------------------------------
 
 def simulate_phase3(
@@ -334,8 +369,8 @@ def simulate_phase3(
     features: Dict[str, Dict],
     weights: Dict[str, float],
     track_profile: dict,
-) -> List[HorseState]:
-    """Phase 3: 400m → Finish (home straight).
+) -> Tuple[List[HorseState], List[PhaseCheckpoint]]:
+    """Phase 3: 400m → Finish (Q4 home straight).
 
     Key physics:
     - available_speed = finishing_speed_z * energy_remaining
@@ -389,6 +424,9 @@ def simulate_phase3(
 
         available_speeds[s.slug] = avail
 
+    # Snapshot gaps at 400m (before sprint modifies them)
+    gaps_at_400m = {s.slug: s.gap_to_leader_m for s in states}
+
     # Identify current leader (smallest gap)
     leader = min(states, key=lambda x: x.gap_to_leader_m)
     leader_speed = available_speeds[leader.slug]
@@ -406,7 +444,21 @@ def simulate_phase3(
 
     _recalc_positions(states)
 
-    return states
+    # Build finish (Q4) checkpoints
+    checkpoints_finish = []
+    for s in states:
+        gap_400 = gaps_at_400m[s.slug]
+        metres_gained = gap_400 - s.gap_to_leader_m  # positive = closed gap
+        q4_time = straight_m / max(1.0, available_speeds.get(s.slug, BASE_PACE_MS))
+        checkpoints_finish.append(PhaseCheckpoint(
+            slug=s.slug,
+            position=s.position,
+            gap_to_leader_m=s.gap_to_leader_m,
+            section_time_s=q4_time,
+            metres_gained_vs_leader=metres_gained,
+        ))
+
+    return states, checkpoints_finish
 
 
 # ---------------------------------------------------------------------------
@@ -421,7 +473,7 @@ def run_single_agentbased(
     track: str = '',
     start_type: str = 'MS',
     track_profile: Optional[dict] = None,
-) -> Tuple[List[str], List[str], Dict[str, str]]:
+) -> Tuple[List[str], List[str], Dict[str, str], Dict[str, str], Dict[str, List[PhaseCheckpoint]]]:
     """Run one agent-based simulation of a harness race.
 
     Args:
@@ -434,10 +486,11 @@ def run_single_agentbased(
         track_profile: Full track profile dict from TRACK_PROFILES
 
     Returns:
-        finish_order:   slugs from 1st to last
+        finish_order:   slugs from 1st to last (sorted by gap_to_leader_m)
         pace_order:     slugs by 800m position (front to back)
         pace_positions: {slug: 'leader'|'on_pace'|'midfield'|'back'} at 800m
         mid_positions:  {slug: 'leader'|'on_pace'|'midfield'|'back'} at 400m
+        checkpoints:    {'800m': [...], '400m': [...], 'finish': [...]} PhaseCheckpoint lists
     """
     if track_profile is None:
         track_profile = {}
@@ -445,7 +498,6 @@ def run_single_agentbased(
     n = len(slugs)
 
     # --- Merge raw features and z-scores into a single lookup dict ---
-    # z-scores get '_z' suffix to avoid name collision with raw values
     features: Dict[str, Dict] = {}
     for slug in slugs:
         combined = dict(raw_features.get(slug, {}))
@@ -453,13 +505,13 @@ def run_single_agentbased(
             combined[feat_name + '_z'] = z_val
         features[slug] = combined
 
-    # --- Add start_type to track profile for phase functions ---
+    # --- Add start_type and race_distance to track profile for phase functions ---
     tp = dict(track_profile)
     tp['start_type'] = start_type
 
     # --- Phase 1: Start → 800m ---
     states = initialise_states(slugs, features, weights)
-    states = simulate_phase1(states, features, weights, tp)
+    states, ckpt_800m = simulate_phase1(states, features, weights, tp)
 
     # Capture pace order and positions at 800m
     sorted_at_800 = sorted(states, key=lambda s: s.gap_to_leader_m)
@@ -468,22 +520,22 @@ def run_single_agentbased(
 
     for s in sorted_at_800:
         bucket = _position_bucket(s.position, n)
-        # Hobart sprint lane: on-pace runners split into garden_seat / midfield_runner
         if bucket == 'on_pace' and track_profile.get('sprint_lane', False):
             bucket = 'garden_seat' if np.random.random() < 0.55 else 'midfield_runner'
         pace_positions[s.slug] = bucket
 
-    # --- Phase 2: 800m → 400m ---
-    states = simulate_phase2(states, features, weights, tp)
+    # --- Phase 2: 800m → 400m (Q3) ---
+    states, ckpt_400m = simulate_phase2(states, features, weights, tp)
 
     # Capture positions at 400m
     mid_positions: Dict[str, str] = {}
     for s in states:
         mid_positions[s.slug] = _position_bucket(s.position, n)
 
-    # --- Phase 3: 400m → Finish ---
-    states = simulate_phase3(states, features, weights, tp)
+    # --- Phase 3: 400m → Finish (Q4) ---
+    states, ckpt_finish = simulate_phase3(states, features, weights, tp)
 
     finish_order = [s.slug for s in sorted(states, key=lambda s: s.gap_to_leader_m)]
+    checkpoints = {'800m': ckpt_800m, '400m': ckpt_400m, 'finish': ckpt_finish}
 
-    return finish_order, pace_order, pace_positions, mid_positions
+    return finish_order, pace_order, pace_positions, mid_positions, checkpoints

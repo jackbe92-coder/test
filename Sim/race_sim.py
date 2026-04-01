@@ -31,13 +31,11 @@ import pandas as pd
 from form_parser import parse_form, Runner, RaceInfo, parse_fields_doc, _is_fields_doc, normalise_track
 from feature_extractor import DataLoader, extract_all_features
 from report_generator import generate_report
-from track_profiles import apply_track_profile
 from agent_model import run_single_agentbased
 from sim_config import (
     WEIGHT_RANGES, TRACK_OVERRIDES, STANDING_START_BARRIER_ADJUSTMENT,
-    DEFAULT_RUNS, PACE_GAP_ON_PACE_STDEV, PACE_GAP_MIDFIELD_STDEV,
-    FIELD_STRENGTH_BASELINE, TRACK_PROFILES,
-    MAX_WIN_PCT_SINGLE_HORSE, DLW_DECAY, THIN_DATA_THRESHOLD,
+    DEFAULT_RUNS, TRACK_PROFILES,
+    DLW_DECAY, THIN_DATA_THRESHOLD,
     MAX_WIN_PCT, MAX_PLACE_PCT,
     CONVERGENCE_BATCH_SIZE, CONVERGENCE_THRESHOLD, CONVERGENCE_STABLE_BATCHES,
     WIN_DROUGHT_WARN_DAYS,
@@ -157,128 +155,6 @@ def zscore_field(
 # Simulation core
 # ---------------------------------------------------------------------------
 
-def run_single_montecarlo(
-    slugs: List[str],
-    z_scores: Dict[str, Dict[str, float]],
-    raw_features: Dict[str, Dict[str, float]],
-    weights: Dict[str, float],
-    track: str = '',
-) -> Tuple[List[str], List[str], Dict[str, str]]:
-    """Run one Monte Carlo simulation (legacy weighted-score model).
-
-    Kept for diff-report comparison with the new agent-based model.
-
-    Returns:
-        finishing_order: list of slugs from 1st to last
-        pace_order:      list of slugs by 800m position (front to back)
-        pace_positions:  {slug: position_label} for this run
-    """
-    n = len(slugs)
-    main_scores = np.zeros(n)
-    pace_score_dict: Dict[str, float] = {}
-
-    for i, slug in enumerate(slugs):
-        z = z_scores[slug]
-
-        # --- Main score: variable-weighted features ---
-        raw = raw_features[slug]
-
-        # --- Field strength: scales class discrimination ---
-        fs = raw.get('field_strength', FIELD_STRENGTH_BASELINE)
-        field_scale = fs / FIELD_STRENGTH_BASELINE  # 1.0 at baseline, higher in strong fields
-
-        # --- Field size: scales barrier advantage (bigger field → draw matters more) ---
-        field_size_ratio = raw.get('field_size_adjustment', 1.0)
-        barrier_scale = 0.7 + 0.3 * min(field_size_ratio, 2.0) / 2.0  # 0.7–1.0
-
-        # --- Driver experience modifier: scales driver quality weight ---
-        exp_mod = raw.get('driver_experience_years', 0.0)
-        driver_quality_scale = 1.0 + exp_mod * 0.3  # ±15% for junior/veteran
-
-        s = (
-            weights['w_gate_speed'] * (
-                z.get('gate_speed', 0)           * 0.35 +
-                z.get('last_800m_pos', 0)         * 0.20 +
-                z.get('position_800m_margin', 0)  * 0.30 +
-                z.get('position_400m_margin', 0)  * 0.15
-            ) +
-            weights['w_finishing_speed'] * (
-                z.get('finishing_speed', 0) * 0.70 +
-                z.get('width_penalty', 0)   * 0.30
-            ) +
-            weights['w_barrier'] * barrier_scale * (
-                z.get('barrier_score', 0)      * 0.50 +
-                z.get('start_type_rate', 0)    * 0.25 +
-                z.get('mobile_barrier_rate', 0) * 0.25
-            ) +
-            weights['w_venue_rate'] * (
-                z.get('venue_win_rate', 0)        * 0.45 +
-                z.get('venue_place_rate', 0)      * 0.25 +
-                z.get('last_win_venue_match', 0)  * 0.15 +
-                z.get('track_condition_rate', 0)  * 0.15
-            ) +
-            weights['w_driver']         * z.get('driver_venue_rate', 0) +
-            weights['w_driver_quality'] * driver_quality_scale * z.get('driver_season_winrate', 0) +
-            weights['w_driver_combo']   * z.get('driver_horse_combo', 0) +
-            weights['w_driver_class']   * z.get('driver_group_experience', 0) +
-            weights['w_class'] * field_scale * (
-                z.get('class_relativity', 0)       * 0.50 +
-                z.get('class_trajectory', 0)       * 0.30 +
-                z.get('career_class_experience', 0) * 0.20
-            ) +
-            weights['w_trend'] * (
-                z.get('mile_rate_trend', 0)       * 0.50 +
-                z.get('winner_beaten_quality', 0) * 0.30 +
-                z.get('days_since_last_win', 0)   * 0.20
-            ) +
-            weights['w_value']    * z.get('sp_vs_performance', 0) +
-            weights['w_distance'] * (
-                z.get('distance_suitability', 0)   * 0.55 +
-                z.get('distance_optimal_range', 0) * 0.45
-            ) +
-            weights['w_trainer']  * z.get('trainer_form', 0)
-        )
-
-        # --- Fixed adjustments (raw values, not z-scored) ---
-        s += FIXED_WEIGHTS['stewards_flag']    * raw.get('stewards_flag', 0)
-        s += FIXED_WEIGHTS['freshness']        * raw.get('freshness', 0)
-        s += FIXED_WEIGHTS['injury_return']    * raw.get('injury_return', 0)
-        s += FIXED_WEIGHTS['driver_suspended'] * raw.get('driver_suspended', 0)
-
-        # --- Luck noise — wider for inconsistent horses ---
-        consistency = raw.get('consistency_score', 0.0)
-        noise_scale = 1.0 + min(consistency * 0.15, 1.0)  # max 2x noise for very erratic horses
-        s += np.random.normal(0, weights['w_luck'] * noise_scale)
-
-        main_scores[i] = s
-
-        # --- Pace score (800m position): gate speed + barrier + positional margins ---
-        p = (
-            weights['w_gate_speed'] * (
-                z.get('gate_speed', 0)          * 0.50 +
-                z.get('position_800m_margin', 0) * 0.35 +
-                z.get('last_800m_pos', 0)        * 0.15
-            ) +
-            weights['w_barrier'] * z.get('barrier_score', 0) * 0.5
-        )
-        p += np.random.normal(0, weights['w_luck'] * 0.5)
-        pace_score_dict[slug] = float(p)
-
-    # --- Track profile post-processing (fixed multipliers, stochastic positions) ---
-    main_score_dict = {slugs[i]: float(main_scores[i]) for i in range(n)}
-    if track:
-        adjusted_dict, pace_positions = apply_track_profile(main_score_dict, pace_score_dict, track)
-    else:
-        adjusted_dict = main_score_dict
-        pace_positions = {s: 'midfield' for s in slugs}
-
-    adjusted_arr = np.array([adjusted_dict[s] for s in slugs])
-    finish_order = [slugs[i] for i in np.argsort(-adjusted_arr)]
-    pace_order = [slugs[i] for i in np.argsort([-pace_score_dict[s] for s in slugs])]
-
-    return finish_order, pace_order, pace_positions
-
-
 # ---------------------------------------------------------------------------
 # DLW decay and convergence utilities
 # ---------------------------------------------------------------------------
@@ -368,18 +244,6 @@ def _check_convergence(
     return False
 
 
-def assign_pace_bucket(rank: int, n_runners: int, leader_score: float, my_score: float,
-                       field_std: float = 1.0) -> str:
-    """Classify pace position based on relative gap from leader (stdev-scaled)."""
-    gap = leader_score - my_score
-    if gap <= PACE_GAP_ON_PACE_STDEV * field_std:
-        return 'on_pace'
-    elif gap <= PACE_GAP_MIDFIELD_STDEV * field_std:
-        return 'midfield'
-    else:
-        return 'back'
-
-
 def run_simulation(
     race_info: RaceInfo,
     all_features: Dict[str, Dict[str, float]],
@@ -432,17 +296,27 @@ def run_simulation(
     # --- Effective weight ranges for this track/start type ---
     eff_ranges = _effective_weight_ranges(race_info.track, race_info.start_type)
 
+    # --- Inject race distance into track profile for checkpoint calculations ---
+    track_profile['race_distance_m'] = float(race_info.distance_m or 2000)
+
     # --- Accumulators ---
     win_counts  = {s: 0 for s in slugs}
     place_counts = {s: 0 for s in slugs}  # top 3
     pos_total    = {s: 0 for s in slugs}  # sum of finish positions (for avg)
     pace_counts  = {s: {'leader': 0, 'on_pace': 0, 'midfield': 0, 'back': 0} for s in slugs}
     mid_counts   = {s: {'leader': 0, 'on_pace': 0, 'midfield': 0, 'back': 0} for s in slugs}
-    phase1_top3  = {s: 0 for s in slugs}  # times in positions 1-3 at 800m
-    phase2_top3  = {s: 0 for s in slugs}  # times in positions 1-3 at 400m
+    phase1_top3  = {s: 0 for s in slugs}
+    phase2_top3  = {s: 0 for s in slugs}
 
     gate_wins = {'low': {s: 0 for s in slugs}, 'mid': {s: 0 for s in slugs}, 'high': {s: 0 for s in slugs}}
     gate_runs = {'low': 0, 'mid': 0, 'high': 0}
+
+    # --- Sectional accumulators (harness.au format) ---
+    sect_accum = {s: {
+        'gap_800m': 0.0, 'gap_400m': 0.0, 'gap_finish': 0.0,
+        'q3_time': 0.0, 'q4_time': 0.0,
+        'gained_800_400': 0.0, 'gained_400_finish': 0.0,
+    } for s in slugs}
 
     # --- Convergence tracking ---
     win_pcts_history: List[Dict[str, float]] = []
@@ -453,7 +327,7 @@ def run_simulation(
     for run_idx in range(n_runs):
         weights = draw_weights(eff_ranges)
 
-        finish_order, pace_order, pace_positions, mid_positions = run_single_agentbased(
+        finish_order, pace_order, pace_positions, mid_positions, checkpoints = run_single_agentbased(
             slugs=slugs,
             z_scores=z_scores,
             raw_features=all_features,
@@ -486,14 +360,30 @@ def run_simulation(
             if bucket in mid_counts[slug]:
                 mid_counts[slug][bucket] += 1
 
-        # Tally top-3 positions at 800m (from pace_order) and 400m (from mid_positions)
+        # Tally top-3 at 800m and 400m
         for idx, slug in enumerate(pace_order[:3]):
             phase1_top3[slug] += 1
-        # For 400m, sort by position bucket priority then gap
         mid_sorted = sorted(mid_positions.keys(),
                            key=lambda s: {'leader': 0, 'on_pace': 1, 'midfield': 2, 'back': 3}.get(mid_positions[s], 4))
         for slug in mid_sorted[:3]:
             phase2_top3[slug] += 1
+
+        # Accumulate sectional checkpoint data
+        ckpt_800 = {c.slug: c for c in checkpoints['800m']}
+        ckpt_400 = {c.slug: c for c in checkpoints['400m']}
+        ckpt_fin = {c.slug: c for c in checkpoints['finish']}
+        for slug in slugs:
+            sa = sect_accum[slug]
+            if slug in ckpt_800:
+                sa['gap_800m'] += ckpt_800[slug].gap_to_leader_m
+            if slug in ckpt_400:
+                sa['gap_400m'] += ckpt_400[slug].gap_to_leader_m
+                sa['q3_time'] += ckpt_400[slug].section_time_s
+                sa['gained_800_400'] += ckpt_400[slug].metres_gained_vs_leader
+            if slug in ckpt_fin:
+                sa['gap_finish'] += ckpt_fin[slug].gap_to_leader_m
+                sa['q4_time'] += ckpt_fin[slug].section_time_s
+                sa['gained_400_finish'] += ckpt_fin[slug].metres_gained_vs_leader
 
         # Robustness binning by w_gate_speed tertile
         g = weights['w_gate_speed']
@@ -587,6 +477,20 @@ def run_simulation(
     win_pct = _apply_cap(win_pct, MAX_WIN_PCT, slugs)
     place_pct = _apply_cap(place_pct, MAX_PLACE_PCT, slugs)
 
+    # --- Average sectional data across runs ---
+    sectionals = {}
+    for slug in slugs:
+        sa = sect_accum[slug]
+        sectionals[slug] = {
+            'avg_800m_margin':      sa['gap_800m'] / runs_done,
+            'avg_400m_margin':      sa['gap_400m'] / runs_done,
+            'avg_finish_margin':    sa['gap_finish'] / runs_done,
+            'avg_q3_time':          sa['q3_time'] / runs_done,
+            'avg_q4_time':          sa['q4_time'] / runs_done,
+            'avg_gained_800_400':   sa['gained_800_400'] / runs_done,
+            'avg_gained_400_finish': sa['gained_400_finish'] / runs_done,
+        }
+
     return {
         'win_pct':          win_pct,
         'place_pct':        place_pct,
@@ -596,6 +500,7 @@ def run_simulation(
         'phase1_top3_pct':  {s: phase1_top3[s] / runs_done for s in slugs},
         'phase2_top3_pct':  {s: phase2_top3[s] / runs_done for s in slugs},
         'weight_win_rates': weight_win_rates,
+        'sectionals':       sectionals,
         'n_runs':           runs_done,
         'convergence_run':  convergence_run,
     }

@@ -428,6 +428,59 @@ def compute_mile_rate_trend(runner: Runner, stride_results: pd.DataFrame) -> Tup
     return -slope, warnings
 
 
+def compute_recency_dampening(
+    runner: Runner,
+    stride_results: pd.DataFrame,
+    trend_score: float,
+) -> Tuple[float, List[str]]:
+    """Dampen momentum score when last 3 results contradict the seasonal trend.
+
+    If the seasonal trend says 'improving' (positive trend_score) but the last 3
+    runs show worsening mile rates, apply a dampening factor (0.3x-0.6x).
+    Vice versa for declining trends contradicted by recent improvement.
+
+    This prevents the artefact where a horse with a strong seasonal trend but
+    recent poor form gets an inflated momentum score (e.g. Rock On Playboy).
+    """
+    warnings = []
+    if abs(trend_score) < 0.001:
+        return trend_score, warnings
+
+    runs = _recent_runs(runner, stride_results, 3)
+    if runs.empty or 'Mile_Rate' not in runs.columns:
+        return trend_score, warnings
+
+    vals = pd.to_numeric(runs['Mile_Rate'], errors='coerce').dropna()
+    if len(vals) < 3:
+        return trend_score, warnings
+
+    # vals is newest-first; compute recent direction
+    # If newest < oldest → improving (mile rate decreasing = faster)
+    recent_improving = float(vals.iloc[-1]) > float(vals.iloc[0])  # oldest > newest = improving
+    # Actually: runs sorted newest first, so vals.iloc[0] = newest, vals.iloc[-1] = oldest
+    # If newest mile rate < oldest → recent runs are faster = improving
+    recent_improving = float(vals.iloc[0]) < float(vals.iloc[-1])
+    seasonal_improving = trend_score > 0
+
+    if recent_improving != seasonal_improving:
+        # Contradiction: dampen the trend score
+        # Scale by how severe the contradiction is
+        recent_vals = vals.values
+        recent_range = abs(float(recent_vals[0]) - float(recent_vals[-1]))
+        if recent_range > 1.0:
+            dampening = 0.3  # Strong contradiction
+        else:
+            dampening = 0.6  # Mild contradiction
+        dampened = trend_score * dampening
+        warnings.append(
+            f"{runner.horse}: recency dampening applied to momentum "
+            f"({trend_score:.3f} → {dampened:.3f}, last 3 contradict seasonal trend)"
+        )
+        return dampened, warnings
+
+    return trend_score, warnings
+
+
 def compute_barrier_score(runner: Runner, track: str, start_type: str) -> Tuple[float, List[str]]:
     """Inside draw advantage. Higher = better gate position.
 
@@ -1260,6 +1313,45 @@ def compute_start_type_rate(
     rate = float(wins_places / n)
     conf = _confidence_weight(n)
     return conf * rate + (1.0 - conf) * overall_rate, warnings
+
+
+# ---------------------------------------------------------------------------
+# Standing start win rate per horse at track
+# ---------------------------------------------------------------------------
+
+def compute_ss_win_rate_at_track(
+    runner: Runner,
+    stride_results: pd.DataFrame,
+    track: str,
+) -> Tuple[float, int, List[str]]:
+    """Horse's win rate specifically in standing starts at this track.
+
+    Returns (rate, n_starts, warnings) — surfaced as a separate callout alongside
+    main win probability, not blended into the sim score.
+    """
+    warnings = []
+    if stride_results.empty or 'Start_Type' not in stride_results.columns:
+        return 0.0, 0, warnings
+
+    runs = _recent_runs(runner, stride_results, 200)
+    if runs.empty:
+        return 0.0, 0, warnings
+
+    # Filter to SS at this track
+    ss_mask = runs['Start_Type'].astype(str).str.upper().str.strip() == 'SS'
+    if track and 'Track' in runs.columns:
+        track_mask = runs['Track'].str.lower().str.strip() == track.lower()
+        combined = runs[ss_mask & track_mask]
+    else:
+        combined = runs[ss_mask]
+
+    n = len(combined)
+    if n == 0:
+        return 0.0, 0, warnings
+
+    wins = int((pd.to_numeric(combined['Place'], errors='coerce') == 1).sum())
+    rate = float(wins / n)
+    return rate, n, warnings
 
 
 # ---------------------------------------------------------------------------
@@ -2184,6 +2276,10 @@ def extract_features(
     data_conf = compute_data_confidence(runner, data.stride_results, track)
     feats['_data_confidence'] = data_conf
 
+    # Store Tasmanian starts count for confidence label in report
+    all_runs = _recent_runs(runner, data.stride_results, 200)
+    feats['_tas_starts'] = float(len(all_runs))
+
     # Mainland visitor flag
     is_visitor = is_mainland_visitor(runner, data.stride_results)
     feats['_mainland_visitor'] = float(is_visitor)
@@ -2237,6 +2333,13 @@ def extract_features(
     add('gate_speed',           compute_gate_speed(runner, data.stride_results))
     add('finishing_speed',      compute_finishing_speed(runner, data.stride_results))
     add('mile_rate_trend',      compute_mile_rate_trend(runner, data.stride_results))
+
+    # Recency dampening: if last 3 results contradict seasonal trend, dampen momentum
+    dampened_trend, damp_w = compute_recency_dampening(
+        runner, data.stride_results, feats.get('mile_rate_trend', 0.0)
+    )
+    feats['mile_rate_trend'] = dampened_trend
+    warnings.extend(damp_w)
     add('venue_win_rate',       compute_venue_win_rate(runner, data.stride_profiles, track))
     add('venue_place_rate',     compute_venue_place_rate(runner, data.stride_profiles, track))
     add('barrier_score',        compute_barrier_score(runner, track, start_type))
@@ -2273,6 +2376,12 @@ def extract_features(
     add('distance_optimal_range', compute_distance_optimal_range(runner, data.stride_results, distance_m))
     add('career_class_experience',compute_career_class_experience(runner, data.stride_results, race_date))
     add('mobile_barrier_rate',    compute_mobile_barrier_rate(runner, data.stride_results, runner.barrier))
+
+    # Standing start win rate at track (separate callout, not blended into sim)
+    ss_rate, ss_n, ss_w = compute_ss_win_rate_at_track(runner, data.stride_results, track)
+    feats['_ss_win_rate'] = ss_rate
+    feats['_ss_starts'] = float(ss_n)
+    warnings.extend(ss_w)
 
     # ── New features ──────────────────────────────────────────────────────────
 

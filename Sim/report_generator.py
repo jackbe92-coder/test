@@ -2,11 +2,12 @@
 report_generator.py — Format Monte Carlo simulation output into a structured report.
 
 Sections:
-  1. Probability Table    — win/place %, implied odds, market SP comparison, value flag
-  2. Speed Map            — leader/on-pace/midfield/back % for each runner
-  3. Robustness Analysis  — robust vs conditional vs fragile selections
-  4. Key Factors Summary  — which features were most predictive
-  5. Analyst Narrative    — natural language race preview
+  1. Probability Table    — win/place %, implied odds, confidence rating
+  2. Predicted Sectionals — harness.au-style 800m/Q3/400m/Q4/margins
+  3. Speed Map            — leader/on-pace/midfield/back % for each runner
+  4. Robustness Analysis  — robust vs conditional vs fragile selections
+  5. Key Factors Summary  — which features were most predictive
+  6. Analyst Narrative    — natural language race preview
 
 Uses `rich` for terminal formatting if installed; falls back to plain text.
 """
@@ -18,7 +19,6 @@ from typing import Dict, List, Optional
 from form_parser import Runner, RaceInfo
 from sim_config import (
     ROBUST_WIN_THRESHOLD, FRAGILE_VARIANCE_THRESHOLD,
-    VALUE_EDGE_THRESHOLD, OVERBET_EDGE_THRESHOLD,
 )
 
 # ---------------------------------------------------------------------------
@@ -56,29 +56,25 @@ def _rule(title: str = ""):
             print("─" * width)
 
 
-# ---------------------------------------------------------------------------
-# Value flag
-# ---------------------------------------------------------------------------
-
-def _value_flag(win_pct: float, sp: float) -> str:
-    """Compare sim win% to implied SP probability."""
-    if sp <= 0:
-        return "—"
-    implied = 1.0 / sp
-    edge = win_pct - implied
-    if edge >= VALUE_EDGE_THRESHOLD:
-        return "VALUE"
-    elif edge <= OVERBET_EDGE_THRESHOLD:
-        return "OVERBET"
-    else:
-        return "FAIR"
-
-
 def _implied_odds(win_pct: float) -> str:
     """Convert win probability to decimal odds."""
     if win_pct <= 0:
         return "—"
     return f"${1.0 / win_pct:.1f}"
+
+
+def _confidence_label(slug: str, all_features: Dict) -> str:
+    """Return confidence rating for a horse based on data availability."""
+    feats = all_features.get(slug, {})
+    conf = feats.get('_data_confidence', 1.0)
+    is_visitor = feats.get('_mainland_visitor', 0.0)
+    tas_starts = feats.get('_tas_starts', 999)
+
+    if is_visitor > 0 or conf <= 0:
+        return "MAINLAND — NO DATA"
+    if tas_starts < 5:
+        return "LOW CONFIDENCE"
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -88,6 +84,7 @@ def _implied_odds(win_pct: float) -> str:
 def _section_probability_table(
     results: Dict,
     race_info: RaceInfo,
+    all_features: Dict,
 ):
     runner_map = {r.slug: r for r in race_info.runners}
     win_pct = results['win_pct']
@@ -105,8 +102,7 @@ def _section_probability_table(
         table.add_column("Win %", justify="right")
         table.add_column("Place %", justify="right")
         table.add_column("Sim Odds", justify="right")
-        table.add_column("Mkt SP", justify="right")
-        table.add_column("Value", justify="center")
+        table.add_column("Confidence", justify="center")
 
         for slug in sorted_slugs:
             r = runner_map.get(slug)
@@ -114,9 +110,8 @@ def _section_probability_table(
                 continue
             wp = win_pct[slug]
             pp = place_pct[slug]
-            sp = r.sp
-            flag = _value_flag(wp, sp)
-            flag_style = {"VALUE": "green bold", "OVERBET": "red", "FAIR": "dim", "—": "dim"}.get(flag, "")
+            conf = _confidence_label(slug, all_features)
+            conf_style = "red bold" if conf else "dim"
             table.add_row(
                 r.horse,
                 str(r.barrier),
@@ -124,12 +119,11 @@ def _section_probability_table(
                 f"{wp * 100:.1f}%",
                 f"{pp * 100:.1f}%",
                 _implied_odds(wp),
-                f"${sp:.2f}" if sp > 0 else "—",
-                Text(flag, style=flag_style),
+                Text(conf or "OK", style=conf_style),
             )
         console.print(table)
     else:
-        header = f"{'Horse':<28} {'Bar':>3} {'Driver':<18} {'Win%':>6} {'Plc%':>6} {'Odds':>7} {'SP':>7} {'Value':<8}"
+        header = f"{'Horse':<28} {'Bar':>3} {'Driver':<18} {'Win%':>6} {'Plc%':>6} {'Odds':>7} {'Confidence':<20}"
         print(header)
         print("-" * len(header))
         for slug in sorted_slugs:
@@ -138,18 +132,108 @@ def _section_probability_table(
                 continue
             wp = win_pct[slug]
             pp = place_pct[slug]
-            sp = r.sp
-            flag = _value_flag(wp, sp)
+            conf = _confidence_label(slug, all_features)
             print(
                 f"{r.horse:<28} {r.barrier:>3} {(r.driver or '—'):<18} "
                 f"{wp * 100:>5.1f}% {pp * 100:>5.1f}% "
-                f"{_implied_odds(wp):>7} "
-                f"{'$' + f'{sp:.2f}' if sp > 0 else '—':>7} {flag:<8}"
+                f"{_implied_odds(wp):>7} {conf or 'OK':<20}"
             )
+
+    # Standing start win rate callout (only for SS races)
+    if race_info.start_type == 'SS':
+        _print()
+        _print("  STANDING START WIN RATE AT TRACK")
+        ss_header = f"  {'Horse':<28} {'SS Win%':>8} {'SS Starts':>9}"
+        _print(ss_header)
+        _print("  " + "-" * (len(ss_header) - 2))
+        for slug in sorted_slugs:
+            r = runner_map.get(slug)
+            if not r:
+                continue
+            feats = all_features.get(slug, {})
+            ss_rate = feats.get('_ss_win_rate', 0.0)
+            ss_n = int(feats.get('_ss_starts', 0))
+            if ss_n > 0:
+                _print(f"  {r.horse:<28} {ss_rate*100:>7.1f}% {ss_n:>9}")
+            else:
+                _print(f"  {r.horse:<28} {'—':>8} {'0':>9}")
 
 
 # ---------------------------------------------------------------------------
-# Section 2: Speed Map
+# Section 2: Predicted Sectionals (harness.au format)
+# ---------------------------------------------------------------------------
+# Section 2: Predicted Sectionals (harness.au format)
+# ---------------------------------------------------------------------------
+
+def _fmt_margin(val: float) -> str:
+    """Format margin value — 'Lead' for leader, else metres with sign."""
+    if abs(val) < 0.05:
+        return "Lead"
+    return f"{val:.2f}"
+
+
+def _fmt_gained(val: float) -> str:
+    """Format metres gained with sign."""
+    if abs(val) < 0.05:
+        return "0.00"
+    return f"{val:+.2f}"
+
+
+def _section_sectionals(results: Dict, race_info: RaceInfo):
+    sectionals = results.get('sectionals', {})
+    if not sectionals:
+        return
+
+    runner_map = {r.slug: r for r in race_info.runners}
+    win_pct = results['win_pct']
+
+    # Sort by predicted finish margin (ascending = winner first)
+    sorted_slugs = sorted(sectionals.keys(),
+                          key=lambda s: sectionals[s].get('avg_finish_margin', 999))
+
+    _rule("2. PREDICTED SECTIONALS  (harness.au format)")
+
+    header = (
+        f"{'Horse':<24} {'800m':>7} {'Q3 Split':>8} {'400m':>7} "
+        f"{'Q4 Split':>8} {'Gained':>8} {'Gained':>8} {'Finish':>8} {'Gained':>9}"
+    )
+    subhdr = (
+        f"{'':24} {'Margin':>7} {'(800-400)':>8} {'Margin':>7} "
+        f"{'(400-Fin)':>8} {'800-400':>8} {'400-Fin':>8} {'Margin':>8} {'800-Fin':>9}"
+    )
+    print(header)
+    print(subhdr)
+    print("-" * len(header))
+
+    for slug in sorted_slugs:
+        r = runner_map.get(slug)
+        if not r:
+            continue
+        s = sectionals[slug]
+        m800 = s['avg_800m_margin']
+        m400 = s['avg_400m_margin']
+        mfin = s['avg_finish_margin']
+        q3   = s['avg_q3_time']
+        q4   = s['avg_q4_time']
+        g_800_400 = s['avg_gained_800_400']
+        g_400_fin = s['avg_gained_400_finish']
+        g_total   = g_800_400 + g_400_fin
+
+        print(
+            f"{r.horse:<24} "
+            f"{_fmt_margin(m800):>7} "
+            f"{q3:>7.2f}s "
+            f"{_fmt_margin(m400):>7} "
+            f"{q4:>7.2f}s "
+            f"{_fmt_gained(g_800_400):>8} "
+            f"{_fmt_gained(g_400_fin):>8} "
+            f"{_fmt_margin(mfin):>8} "
+            f"{_fmt_gained(g_total):>9}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Section 3: Speed Map
 # ---------------------------------------------------------------------------
 
 def _fmt_bucket(pp: Dict[str, float]) -> str:
@@ -168,7 +252,7 @@ def _section_speed_map(results: Dict, race_info: RaceInfo):
     # Sort by leader probability descending
     sorted_slugs = sorted(pace_pct.keys(), key=lambda s: -pace_pct[s].get('leader', 0))
 
-    _rule("2. RACE POSITIONING  (Phase 1 → 2 → 3)")
+    _rule("3. RACE POSITIONING  (Phase 1 → 2 → 3)")
 
     # Header
     print(f"{'':28}  ── Phase 1 (800m) ──  ── Phase 2 (400m) ──  ── Phase 3 (Finish) ──")
@@ -239,7 +323,7 @@ def _section_robustness(results: Dict, race_info: RaceInfo):
     win_pct = results['win_pct']
     sorted_slugs = sorted(win_pct.keys(), key=lambda s: -win_pct[s])
 
-    _rule("3. ROBUSTNESS ANALYSIS")
+    _rule("4. ROBUSTNESS ANALYSIS")
     _print("  Robust = wins >20%+ across all weight scenarios")
     _print("  Conditional = wins depend on a specific race shape")
     _print("  Fragile = win% collapses outside a narrow weight band")
@@ -271,7 +355,7 @@ def _section_robustness(results: Dict, race_info: RaceInfo):
 # ---------------------------------------------------------------------------
 
 def _section_key_factors(results: Dict, all_features: Dict, race_info: RaceInfo):
-    _rule("4. KEY FACTORS")
+    _rule("5. KEY FACTORS")
 
     import numpy as np
 
@@ -323,7 +407,7 @@ def _section_narrative(
     all_features: Dict,
     warnings: List[str],
 ):
-    _rule("5. ANALYST NARRATIVE")
+    _rule("6. ANALYST NARRATIVE")
 
     runner_map = {r.slug: r for r in race_info.runners}
     win_pct = results['win_pct']
@@ -368,26 +452,6 @@ def _section_narrative(
                if danger_rob == 'CONDITIONAL'
                else "genuine threat regardless of tempo.")
         )
-
-    # --- Value plays ---
-    value_plays = [
-        runner_map[s] for s in sorted_slugs
-        if runner_map[s].sp > 0 and _value_flag(win_pct[s], runner_map[s].sp) == "VALUE"
-    ]
-    if value_plays:
-        names = ", ".join(r.horse for r in value_plays)
-        lines.append(f"\nVALUE: {names} — simulation win% exceeds market implied probability.")
-    else:
-        lines.append("\nNo horses flagged as clear value at current market prices.")
-
-    # --- Horses to oppose ---
-    overbet = [
-        runner_map[s] for s in sorted_slugs
-        if runner_map[s].sp > 0 and _value_flag(win_pct[s], runner_map[s].sp) == "OVERBET"
-    ]
-    if overbet:
-        names = ", ".join(r.horse for r in overbet)
-        lines.append(f"\nOPPOSE: {names} — market price shorter than simulation suggests.")
 
     # --- Race shape prediction ---
     leaders = [
@@ -443,7 +507,7 @@ def generate_report(
     all_features: Dict,
     warnings: List[str],
 ):
-    """Print the full five-section simulation report."""
+    """Print the full six-section simulation report."""
     track = race_info.track or "Unknown Track"
     race_label = f"Race {race_info.race_no}" if race_info.race_no else ""
     title = f"  MONTE CARLO RACE SIMULATION — {track.upper()} {race_label}  "
@@ -457,7 +521,9 @@ def generate_report(
         print("=" * max(72, len(title)))
 
     _print()
-    _section_probability_table(results, race_info)
+    _section_probability_table(results, race_info, all_features)
+    _print()
+    _section_sectionals(results, race_info)
     _print()
     _section_speed_map(results, race_info)
     _print()

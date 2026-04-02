@@ -191,11 +191,11 @@ def _section_sectionals(results: Dict, race_info: RaceInfo):
     sorted_slugs = sorted(sectionals.keys(),
                           key=lambda s: sectionals[s].get('avg_finish_margin', 999))
 
-    _rule("2. PREDICTED SECTIONALS  (harness.au format)")
+    _rule("2. PREDICTED SECTIONALS  (harness.au format, times are estimates)")
 
     header = (
-        f"{'Horse':<24} {'800m':>7} {'Q3 Split':>8} {'400m':>7} "
-        f"{'Q4 Split':>8} {'Gained':>8} {'Gained':>8} {'Finish':>8} {'Gained':>9}"
+        f"{'Horse':<24} {'800m':>7} {'Q3 Est.':>8} {'400m':>7} "
+        f"{'Q4 Est.':>8} {'Gained':>8} {'Gained':>8} {'Finish':>8} {'Gained':>9}"
     )
     subhdr = (
         f"{'':24} {'Margin':>7} {'(800-400)':>8} {'Margin':>7} "

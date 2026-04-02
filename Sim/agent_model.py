@@ -444,12 +444,25 @@ def simulate_phase3(
 
     _recalc_positions(states)
 
+    # Normalize gaps so the winner (smallest gap) has gap = 0.0
+    # This makes finish margins relative to the race winner, not the Phase 1 leader
+    winner_gap = min(s.gap_to_leader_m for s in states)
+    for s in states:
+        s.gap_to_leader_m -= winner_gap
+
+    # Also normalize 400m gaps for the metres-gained calculation
+    # so gains are measured relative to the 400m leader
+    leader_400_gap = min(gaps_at_400m.values())
+    gaps_at_400m_norm = {slug: g - leader_400_gap for slug, g in gaps_at_400m.items()}
+
     # Build finish (Q4) checkpoints
+    # Q4 represents the last 400m quarter, not just the straight
+    q4_distance = 400.0
     checkpoints_finish = []
     for s in states:
-        gap_400 = gaps_at_400m[s.slug]
-        metres_gained = gap_400 - s.gap_to_leader_m  # positive = closed gap
-        q4_time = straight_m / max(1.0, available_speeds.get(s.slug, BASE_PACE_MS))
+        gap_400 = gaps_at_400m_norm[s.slug]
+        metres_gained = gap_400 - s.gap_to_leader_m  # positive = closed gap on leader
+        q4_time = q4_distance / max(1.0, available_speeds.get(s.slug, BASE_PACE_MS))
         checkpoints_finish.append(PhaseCheckpoint(
             slug=s.slug,
             position=s.position,

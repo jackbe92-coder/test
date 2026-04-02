@@ -433,14 +433,20 @@ def compute_recency_dampening(
     stride_results: pd.DataFrame,
     trend_score: float,
 ) -> Tuple[float, List[str]]:
-    """Dampen momentum score when last 3 results contradict the seasonal trend.
+    """Dampen momentum score when recent results contradict the seasonal trend.
 
-    If the seasonal trend says 'improving' (positive trend_score) but the last 3
-    runs show worsening mile rates, apply a dampening factor (0.3x-0.6x).
-    Vice versa for declining trends contradicted by recent improvement.
+    Continuous scale: counts how many of the last 3 run-to-run changes contradict
+    the seasonal direction. More contradictions = heavier dampening.
 
-    This prevents the artefact where a horse with a strong seasonal trend but
-    recent poor form gets an inflated momentum score (e.g. Rock On Playboy).
+      0 contradictions: no dampening (e.g. Captain Pins — consistent 4ths, trend
+        and recent results agree)
+      1 contradiction:  0.85x (mild wobble)
+      2 contradictions: 0.55x (clear divergence)
+      3 contradictions: 0.30x (full contradiction — e.g. Rock On Playboy with
+        strong season but last 3 all worsening)
+
+    Also scaled by the magnitude of the contradiction: if the recent range exceeds
+    2.0 seconds of mile rate, the dampening is strengthened by an extra 15%.
     """
     warnings = []
     if abs(trend_score) < 0.001:
@@ -454,31 +460,42 @@ def compute_recency_dampening(
     if len(vals) < 3:
         return trend_score, warnings
 
-    # vals is newest-first; compute recent direction
-    # If newest < oldest → improving (mile rate decreasing = faster)
-    recent_improving = float(vals.iloc[-1]) > float(vals.iloc[0])  # oldest > newest = improving
-    # Actually: runs sorted newest first, so vals.iloc[0] = newest, vals.iloc[-1] = oldest
-    # If newest mile rate < oldest → recent runs are faster = improving
-    recent_improving = float(vals.iloc[0]) < float(vals.iloc[-1])
+    # vals is newest-first: vals.iloc[0] = most recent, vals.iloc[-1] = oldest of 3
     seasonal_improving = trend_score > 0
 
-    if recent_improving != seasonal_improving:
-        # Contradiction: dampen the trend score
-        # Scale by how severe the contradiction is
-        recent_vals = vals.values
-        recent_range = abs(float(recent_vals[0]) - float(recent_vals[-1]))
-        if recent_range > 1.0:
-            dampening = 0.3  # Strong contradiction
-        else:
-            dampening = 0.6  # Mild contradiction
-        dampened = trend_score * dampening
-        warnings.append(
-            f"{runner.horse}: recency dampening applied to momentum "
-            f"({trend_score:.3f} → {dampened:.3f}, last 3 contradict seasonal trend)"
-        )
-        return dampened, warnings
+    # Count run-to-run contradictions.
+    # "Improving" means mile rate decreasing (faster). A run-to-run change that
+    # goes the OPPOSITE direction of the seasonal trend is a contradiction.
+    contradictions = 0
+    recent_vals = vals.values
+    for i in range(len(recent_vals) - 1):
+        # newer = recent_vals[i], older = recent_vals[i+1]
+        # If newer > older → mile rate increased = worsened
+        run_worsened = float(recent_vals[i]) > float(recent_vals[i + 1])
+        if seasonal_improving and run_worsened:
+            contradictions += 1
+        elif not seasonal_improving and not run_worsened:
+            contradictions += 1
 
-    return trend_score, warnings
+    if contradictions == 0:
+        return trend_score, warnings
+
+    # Continuous dampening scale
+    dampening_table = {1: 0.85, 2: 0.55, 3: 0.30}
+    dampening = dampening_table.get(contradictions, 0.85)
+
+    # Magnitude boost: large recent range = extra 15% dampening
+    recent_range = abs(float(recent_vals[0]) - float(recent_vals[-1]))
+    if recent_range > 2.0:
+        dampening *= 0.85
+
+    dampened = trend_score * dampening
+    warnings.append(
+        f"{runner.horse}: recency dampening applied to momentum "
+        f"({trend_score:.3f} -> {dampened:.3f}, {contradictions}/2 recent run-pairs "
+        f"contradict seasonal trend)"
+    )
+    return dampened, warnings
 
 
 def compute_barrier_score(runner: Runner, track: str, start_type: str) -> Tuple[float, List[str]]:
